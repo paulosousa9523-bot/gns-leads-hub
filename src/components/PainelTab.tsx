@@ -118,11 +118,16 @@ export function PainelTab({ leads, session }: { leads: Lead[]; session: Session 
                 <div className="h-1.5 bg-muted rounded-full overflow-hidden mb-2">
                   <div className="h-full bg-primary" style={{ width: `${(v.total / maxTotal) * 100}%` }} />
                 </div>
-                <div className="grid grid-cols-4 gap-1.5 text-[10px]">
-                  <Mini label="Conv" value={v.convertidos} tone="primary" />
-                  <Mini label="Qual" value={v.qualificados} />
+                <div className="grid grid-cols-4 gap-1.5 text-[10px] mb-2">
                   <Mini label="Pend" value={v.pendentes} tone={v.pendentes ? "warn" : undefined} />
+                  <Mini label="Qual" value={v.qualificados} />
+                  <Mini label="Conv" value={v.convertidos} tone="primary" />
                   <Mini label="Taxa" value={`${v.taxa}%`} tone="primary" />
+                </div>
+                <div className="grid grid-cols-6 gap-1 text-[10px]">
+                  {STATUS_ORDER.map((s) => (
+                    <Mini key={s} label={STATUS_LABEL[s].slice(0, 5)} value={v.porStatus[s] || 0} />
+                  ))}
                 </div>
               </button>
             ))}
