@@ -1,91 +1,142 @@
 import { useState } from "react";
-import type { Lead } from "@/lib/leads";
-import { STATUS_LABEL, STATUS_STYLE, followupState, nextStatus, normalizePhoneForWa, computeFollowup, todayISO, STATUS_ORDER } from "@/lib/leads";
+import type { Lead, LeadStatus } from "@/lib/leads";
+import {
+  STATUS_LABEL,
+  STATUS_STYLE,
+  STATUS_ORDER,
+  DIA_COLUMNS,
+  normalizePhoneForWa,
+  timeAgo,
+  dayProgress,
+} from "@/lib/leads";
 import { supabase } from "@/integrations/supabase/client";
-import { MessageCircle, ChevronDown, ChevronRight, Pencil, ArrowRight, X } from "lucide-react";
+import type { Session } from "@/lib/auth";
+import { MessageCircle, Pencil, X, Download } from "lucide-react";
 
 interface Props {
   lead: Lead;
-  showVendedor: boolean;
+  session: Session;
+  showVendedor?: boolean;
+  showPullButton?: boolean;
+  draggable?: boolean;
 }
 
-export function LeadCard({ lead, showVendedor }: Props) {
+export function LeadCard({ lead, session, showVendedor, showPullButton, draggable }: Props) {
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState(false);
-  const fu = followupState(lead.followup, lead.status);
+
+  const isDia = (DIA_COLUMNS as LeadStatus[]).includes(lead.status);
+  const progress = isDia ? Math.min(1, dayProgress(lead.movido_em)) : 0;
+  const hrs = (Date.now() - new Date(lead.movido_em).getTime()) / 3_600_000;
+  const progressColor = hrs >= 20 ? "bg-danger" : hrs >= 12 ? "bg-warning" : "bg-primary";
 
   const borderColor =
-    lead.status === "convertido" ? "border-l-primary" :
-    fu === "late" ? "border-l-danger" :
-    fu === "today" ? "border-l-warning" :
-    "border-l-border";
+    lead.status === "cliente_fechado" ? "border-l-primary"
+    : isDia && hrs >= 20 ? "border-l-danger"
+    : "border-l-border";
 
-  const advance = async () => {
-    const ns = nextStatus(lead.status);
-    if (ns === lead.status) return;
-    const fu = computeFollowup(ns);
-    await supabase.from("leads").update({ status: ns, followup: fu }).eq("id", lead.id);
+  const phones = [lead.phone, lead.phone2, lead.phone3, lead.phone4, lead.phone5].filter(Boolean) as string[];
+
+  const openWa = (p: string) => {
+    window.open(`https://wa.me/${normalizePhoneForWa(p)}`, "_blank");
   };
 
-  const openWa = () => {
-    const num = normalizePhoneForWa(lead.phone);
-    window.open(`https://wa.me/${num}`, "_blank");
+  const pull = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    await supabase.from("leads").update({
+      vendedor: session.name,
+      status: "dia_1",
+      movido_em: new Date().toISOString(),
+    }).eq("id", lead.id);
   };
 
-  const hideAdvance = lead.status === "convertido" || lead.status === "fechado";
+  const onDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData("text/plain", lead.id);
+    e.dataTransfer.effectAllowed = "move";
+  };
 
   return (
     <>
-      <div className={`bg-surface border border-border border-l-4 ${borderColor} rounded-xl p-4 space-y-2`}>
-        <button onClick={() => setOpen(!open)} className="w-full flex items-start justify-between gap-3 text-left">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-semibold truncate">{lead.nome}</h3>
-              <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${STATUS_STYLE[lead.status]}`}>
-                {STATUS_LABEL[lead.status]}
-              </span>
-            </div>
-            <div className="text-sm text-muted-foreground mt-1 truncate">{lead.phone}</div>
-            <div className="text-xs text-muted-foreground/80 mt-0.5 truncate">
+      <div
+        draggable={draggable}
+        onDragStart={draggable ? onDragStart : undefined}
+        className={`bg-surface border border-border border-l-4 ${borderColor} rounded-lg p-3 space-y-2 ${draggable ? "cursor-grab active:cursor-grabbing" : ""}`}
+      >
+        <button onClick={() => setOpen(!open)} className="w-full text-left">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-semibold text-sm truncate flex-1">{lead.nome}</h3>
+            <span className="text-[10px] text-muted-foreground shrink-0">{timeAgo(lead.movido_em)}</span>
+          </div>
+          {lead.cnpj && <div className="text-[11px] text-muted-foreground/80 truncate">CNPJ {lead.cnpj}</div>}
+          <div className="text-xs text-muted-foreground mt-0.5 truncate">{lead.phone}</div>
+          {(lead.veiculo || lead.tribunal) && (
+            <div className="text-[11px] text-muted-foreground/70 mt-0.5 truncate">
               {lead.veiculo || "—"} · {lead.tribunal || "—"}
             </div>
-            {showVendedor && (
-              <div className="inline-block mt-1.5 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                {lead.vendedor}
-              </div>
-            )}
-            {fu !== "none" && (
-              <div className={`text-xs mt-1.5 font-medium ${fu === "late" ? "text-danger" : "text-warning"}`}>
-                {fu === "late" ? "⚠ Follow-up atrasado" : "● Follow-up hoje"} · {lead.followup}
-              </div>
-            )}
-          </div>
-          {open ? <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 mt-1" /> : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 mt-1" />}
+          )}
+          {showVendedor && (
+            <div className="inline-block mt-1.5 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+              {lead.vendedor}
+            </div>
+          )}
         </button>
+
+        {isDia && (
+          <div className="h-1 bg-muted rounded-full overflow-hidden">
+            <div className={`h-full ${progressColor} transition-all`} style={{ width: `${progress * 100}%` }} />
+          </div>
+        )}
+
+        {showPullButton && (
+          <button
+            onClick={pull}
+            className="w-full inline-flex items-center justify-center gap-1.5 bg-primary text-primary-foreground text-xs font-semibold px-3 py-1.5 rounded-md hover:opacity-90"
+          >
+            <Download className="w-3.5 h-3.5" /> Puxar para minha esteira
+          </button>
+        )}
 
         {open && (
           <div className="pt-2 border-t border-border space-y-2 text-sm">
             <div>
-              <div className="text-xs uppercase tracking-wider text-muted-foreground">Processo</div>
-              <div>{lead.processo || "—"}</div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Status</div>
+              <span className={`inline-block text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${STATUS_STYLE[lead.status]}`}>
+                {STATUS_LABEL[lead.status]}
+              </span>
             </div>
-            {lead.obs && (
+            {phones.length > 1 && (
               <div>
-                <div className="text-xs uppercase tracking-wider text-muted-foreground">Observações</div>
-                <div className="whitespace-pre-wrap">{lead.obs}</div>
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Telefones</div>
+                <div className="space-y-1">
+                  {phones.map((p, i) => (
+                    <div key={i} className="flex items-center justify-between text-xs">
+                      <span>{p}</span>
+                      <button onClick={() => openWa(p)} className="text-primary inline-flex items-center gap-1">
+                        <MessageCircle className="w-3 h-3" /> WA
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
-            <div className="flex flex-wrap gap-2 pt-2">
-              <button onClick={openWa} className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground text-sm font-semibold px-3 py-1.5 rounded-lg hover:opacity-90">
-                <MessageCircle className="w-4 h-4" /> WhatsApp
+            {lead.processo && (
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Processo</div>
+                <div className="text-xs">{lead.processo}</div>
+              </div>
+            )}
+            {lead.obs && (
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Observações</div>
+                <div className="text-xs whitespace-pre-wrap">{lead.obs}</div>
+              </div>
+            )}
+            <div className="flex flex-wrap gap-2 pt-1">
+              <button onClick={() => openWa(lead.phone)} className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground text-xs font-semibold px-2.5 py-1.5 rounded-md">
+                <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
               </button>
-              {!hideAdvance && (
-                <button onClick={advance} className="inline-flex items-center gap-1.5 bg-muted border border-border text-sm font-semibold px-3 py-1.5 rounded-lg hover:border-primary">
-                  <ArrowRight className="w-4 h-4" /> Avançar
-                </button>
-              )}
-              <button onClick={() => setEdit(true)} className="inline-flex items-center gap-1.5 bg-muted border border-border text-sm font-semibold px-3 py-1.5 rounded-lg hover:border-primary">
-                <Pencil className="w-4 h-4" /> Editar
+              <button onClick={() => setEdit(true)} className="inline-flex items-center gap-1.5 bg-muted border border-border text-xs font-semibold px-2.5 py-1.5 rounded-md hover:border-primary">
+                <Pencil className="w-3.5 h-3.5" /> Editar
               </button>
             </div>
           </div>
@@ -100,32 +151,37 @@ export function LeadCard({ lead, showVendedor }: Props) {
 function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
   const [form, setForm] = useState({
     nome: lead.nome,
+    cnpj: lead.cnpj || "",
     phone: lead.phone,
+    phone2: lead.phone2 || "",
+    phone3: lead.phone3 || "",
+    phone4: lead.phone4 || "",
+    phone5: lead.phone5 || "",
     veiculo: lead.veiculo || "",
     tribunal: lead.tribunal || "",
     processo: lead.processo || "",
     status: lead.status,
     obs: lead.obs || "",
-    followup: lead.followup || "",
   });
   const [saving, setSaving] = useState(false);
 
-  const onStatusChange = (s: Lead["status"]) => {
-    const fu = computeFollowup(s);
-    setForm({ ...form, status: s, followup: fu || form.followup });
-  };
-
   const save = async () => {
     setSaving(true);
+    const statusChanged = form.status !== lead.status;
     await supabase.from("leads").update({
       nome: form.nome,
+      cnpj: form.cnpj || null,
       phone: form.phone,
+      phone2: form.phone2 || null,
+      phone3: form.phone3 || null,
+      phone4: form.phone4 || null,
+      phone5: form.phone5 || null,
       veiculo: form.veiculo || null,
       tribunal: form.tribunal || null,
       processo: form.processo || null,
       status: form.status,
       obs: form.obs || null,
-      followup: form.followup || null,
+      ...(statusChanged ? { movido_em: new Date().toISOString() } : {}),
     }).eq("id", lead.id);
     setSaving(false);
     onClose();
@@ -140,17 +196,21 @@ function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
         </div>
         <div className="p-4 space-y-3">
           <Field label="Nome"><input className="input" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></Field>
-          <Field label="Telefone"><input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field>
+          <Field label="CNPJ"><input className="input" value={form.cnpj} onChange={(e) => setForm({ ...form, cnpj: e.target.value })} /></Field>
+          <Field label="Telefone 1"><input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="Telefone 2"><input className="input" value={form.phone2} onChange={(e) => setForm({ ...form, phone2: e.target.value })} /></Field>
+            <Field label="Telefone 3"><input className="input" value={form.phone3} onChange={(e) => setForm({ ...form, phone3: e.target.value })} /></Field>
+            <Field label="Telefone 4"><input className="input" value={form.phone4} onChange={(e) => setForm({ ...form, phone4: e.target.value })} /></Field>
+            <Field label="Telefone 5"><input className="input" value={form.phone5} onChange={(e) => setForm({ ...form, phone5: e.target.value })} /></Field>
+          </div>
           <Field label="Veículo"><input className="input" value={form.veiculo} onChange={(e) => setForm({ ...form, veiculo: e.target.value })} /></Field>
           <Field label="Tribunal"><input className="input" value={form.tribunal} onChange={(e) => setForm({ ...form, tribunal: e.target.value })} /></Field>
           <Field label="Processo"><input className="input" value={form.processo} onChange={(e) => setForm({ ...form, processo: e.target.value })} /></Field>
-          <Field label="Status">
-            <select className="input" value={form.status} onChange={(e) => onStatusChange(e.target.value as Lead["status"])}>
+          <Field label="Coluna">
+            <select className="input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Lead["status"] })}>
               {STATUS_ORDER.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
             </select>
-          </Field>
-          <Field label="Follow-up">
-            <input type="date" className="input" min={todayISO()} value={form.followup} onChange={(e) => setForm({ ...form, followup: e.target.value })} />
           </Field>
           <Field label="Observações">
             <textarea className="input min-h-[80px]" value={form.obs} onChange={(e) => setForm({ ...form, obs: e.target.value })} />
@@ -171,7 +231,7 @@ function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-1">
-      <span className="text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
       {children}
     </label>
   );

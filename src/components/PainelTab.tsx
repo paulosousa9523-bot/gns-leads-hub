@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { Lead, LeadStatus } from "@/lib/leads";
-import { followupState, STATUS_LABEL, STATUS_ORDER } from "@/lib/leads";
+import { STATUS_LABEL, STATUS_ORDER } from "@/lib/leads";
 import type { Session } from "@/lib/auth";
 import { VENDEDORES } from "@/lib/auth";
 
@@ -68,8 +68,9 @@ export function PainelTab({ leads, session }: { leads: Lead[]; session: Session 
             <div className="h-full bg-primary" style={{ width: `${stats.taxa}%` }} />
           </div>
         </div>
-        <Stat label="Qualificados" value={stats.qualificados} />
-        <Stat label="Novos" value={stats.porStatus.novo || 0} />
+        <Stat label="Em negociação" value={stats.qualificados} />
+        <Stat label="No funil" value={stats.porStatus.funil || 0} />
+
       </div>
 
       <div className="bg-surface border border-border rounded-xl p-4 space-y-2">
@@ -149,12 +150,11 @@ type Stats = {
 
 function computeStats(leads: Lead[]): Stats {
   const total = leads.length;
-  const pendentes = leads.filter((l) => {
-    const s = followupState(l.followup, l.status);
-    return s === "late" || s === "today";
-  }).length;
-  const convertidos = leads.filter((l) => l.status === "convertido").length;
-  const qualificados = leads.filter((l) => l.status === "qualificado").length;
+  const pendentes = leads.filter((l) =>
+    l.status === "dia_1" || l.status === "dia_2" || l.status === "dia_3" || l.status === "dia_4" || l.status === "dia_5"
+  ).length;
+  const convertidos = leads.filter((l) => l.status === "cliente_fechado").length;
+  const qualificados = leads.filter((l) => l.status === "negociacao" || l.status === "contrato").length;
   const taxa = total > 0 ? Math.round((convertidos / total) * 100) : 0;
   const porStatus = STATUS_ORDER.reduce((acc, s) => {
     acc[s] = leads.filter((l) => l.status === s).length;
@@ -162,6 +162,7 @@ function computeStats(leads: Lead[]): Stats {
   }, {} as Record<LeadStatus, number>);
   return { total, pendentes, convertidos, qualificados, taxa, porStatus };
 }
+
 
 function Stat({ label, value, tone }: { label: string; value: number; tone?: "warn" | "ok" }) {
   const color = tone === "warn" ? "text-warning" : "text-foreground";

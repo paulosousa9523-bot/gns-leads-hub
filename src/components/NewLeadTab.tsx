@@ -1,12 +1,22 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { computeFollowup, STATUS_LABEL, STATUS_ORDER, type LeadStatus } from "@/lib/leads";
+import { STATUS_LABEL, STATUS_ORDER, type LeadStatus } from "@/lib/leads";
 import type { Session } from "@/lib/auth";
 
 export function NewLeadTab({ session }: { session: Session }) {
   const [form, setForm] = useState({
-    nome: "", phone: "", veiculo: "", tribunal: "", processo: "",
-    status: "novo" as LeadStatus, obs: "",
+    nome: "",
+    cnpj: "",
+    phone: "",
+    phone2: "",
+    phone3: "",
+    phone4: "",
+    phone5: "",
+    veiculo: "",
+    tribunal: "",
+    processo: "",
+    status: "dia_1" as LeadStatus,
+    obs: "",
   });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
@@ -14,7 +24,7 @@ export function NewLeadTab({ session }: { session: Session }) {
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.nome || !form.phone) {
-      setMsg("Nome e telefone são obrigatórios");
+      setMsg("Nome e telefone principal são obrigatórios");
       return;
     }
     setSaving(true);
@@ -22,20 +32,28 @@ export function NewLeadTab({ session }: { session: Session }) {
     const { error } = await supabase.from("leads").insert({
       vendedor: session.name,
       nome: form.nome,
+      cnpj: form.cnpj || null,
       phone: form.phone,
+      phone2: form.phone2 || null,
+      phone3: form.phone3 || null,
+      phone4: form.phone4 || null,
+      phone5: form.phone5 || null,
       veiculo: form.veiculo || null,
       tribunal: form.tribunal || null,
       processo: form.processo || null,
       status: form.status,
       obs: form.obs || null,
-      followup: computeFollowup(form.status),
+      movido_em: new Date().toISOString(),
     });
     setSaving(false);
     if (error) {
       setMsg("Erro: " + error.message);
     } else {
       setMsg("Lead salvo!");
-      setForm({ nome: "", phone: "", veiculo: "", tribunal: "", processo: "", status: "novo", obs: "" });
+      setForm({
+        nome: "", cnpj: "", phone: "", phone2: "", phone3: "", phone4: "", phone5: "",
+        veiculo: "", tribunal: "", processo: "", status: "dia_1", obs: "",
+      });
       setTimeout(() => setMsg(""), 2000);
     }
   };
@@ -44,11 +62,18 @@ export function NewLeadTab({ session }: { session: Session }) {
     <form onSubmit={save} className="space-y-3 max-w-lg mx-auto">
       <h2 className="text-xl font-bold">Nova lead</h2>
       <Field label="Nome do cliente *"><input required className="input" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></Field>
-      <Field label="Telefone (com DDD) *"><input required className="input" placeholder="11 99999-9999" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field>
+      <Field label="CNPJ"><input className="input" placeholder="00.000.000/0000-00" value={form.cnpj} onChange={(e) => setForm({ ...form, cnpj: e.target.value })} /></Field>
+      <Field label="Telefone 1 (com DDD) *"><input required className="input" placeholder="11 99999-9999" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Telefone 2"><input className="input" value={form.phone2} onChange={(e) => setForm({ ...form, phone2: e.target.value })} /></Field>
+        <Field label="Telefone 3"><input className="input" value={form.phone3} onChange={(e) => setForm({ ...form, phone3: e.target.value })} /></Field>
+        <Field label="Telefone 4"><input className="input" value={form.phone4} onChange={(e) => setForm({ ...form, phone4: e.target.value })} /></Field>
+        <Field label="Telefone 5"><input className="input" value={form.phone5} onChange={(e) => setForm({ ...form, phone5: e.target.value })} /></Field>
+      </div>
       <Field label="Veículo"><input className="input" placeholder="Ex: Caminhão Volvo FH 540" value={form.veiculo} onChange={(e) => setForm({ ...form, veiculo: e.target.value })} /></Field>
       <Field label="Tribunal"><input className="input" placeholder="Ex: TJ-SP" value={form.tribunal} onChange={(e) => setForm({ ...form, tribunal: e.target.value })} /></Field>
       <Field label="Número do processo"><input className="input" value={form.processo} onChange={(e) => setForm({ ...form, processo: e.target.value })} /></Field>
-      <Field label="Status inicial">
+      <Field label="Coluna inicial">
         <select className="input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as LeadStatus })}>
           {STATUS_ORDER.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
         </select>

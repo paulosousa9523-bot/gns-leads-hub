@@ -9,6 +9,8 @@ import { NewLeadTab } from "@/components/NewLeadTab";
 import { RoteiroTab } from "@/components/RoteiroTab";
 import { PainelTab } from "@/components/PainelTab";
 import { LogOut, Users, Plus, MessageSquare, BarChart3 } from "lucide-react";
+import { useAutoProgression } from "@/lib/autoProgression";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -76,7 +78,10 @@ function App() {
     // reset filter handled inside LeadsTab via key
   }, [tab]);
 
+  useAutoProgression(leads, session);
+
   if (!ready) return null;
+
   if (!session) return <LoginScreen onLogin={setSessionState} />;
 
   const logout = () => {
