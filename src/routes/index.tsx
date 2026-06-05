@@ -78,7 +78,10 @@ function App() {
     // reset filter handled inside LeadsTab via key
   }, [tab]);
 
+  useAutoProgression(leads, session);
+
   if (!ready) return null;
+
   if (!session) return <LoginScreen onLogin={setSessionState} />;
 
   const logout = () => {
