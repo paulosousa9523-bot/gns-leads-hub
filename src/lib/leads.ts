@@ -26,7 +26,9 @@ export interface Lead {
   phone4: string | null;
   phone5: string | null;
   cnpj: string | null;
+  cpf: string | null;
   veiculo: string | null;
+  tipo_processo: string | null;
   tribunal: string | null;
   processo: string | null;
   status: LeadStatus;
