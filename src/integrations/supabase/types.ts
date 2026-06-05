@@ -16,12 +16,18 @@ export type Database = {
     Tables: {
       leads: {
         Row: {
+          cnpj: string | null
           criado: string
           followup: string | null
           id: string
+          movido_em: string
           nome: string
           obs: string | null
           phone: string
+          phone2: string | null
+          phone3: string | null
+          phone4: string | null
+          phone5: string | null
           processo: string | null
           status: string
           tribunal: string | null
@@ -29,12 +35,18 @@ export type Database = {
           vendedor: string
         }
         Insert: {
+          cnpj?: string | null
           criado?: string
           followup?: string | null
           id?: string
+          movido_em?: string
           nome: string
           obs?: string | null
           phone: string
+          phone2?: string | null
+          phone3?: string | null
+          phone4?: string | null
+          phone5?: string | null
           processo?: string | null
           status?: string
           tribunal?: string | null
@@ -42,12 +54,18 @@ export type Database = {
           vendedor: string
         }
         Update: {
+          cnpj?: string | null
           criado?: string
           followup?: string | null
           id?: string
+          movido_em?: string
           nome?: string
           obs?: string | null
           phone?: string
+          phone2?: string | null
+          phone3?: string | null
+          phone4?: string | null
+          phone5?: string | null
           processo?: string | null
           status?: string
           tribunal?: string | null
