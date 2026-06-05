@@ -9,6 +9,8 @@ import { NewLeadTab } from "@/components/NewLeadTab";
 import { RoteiroTab } from "@/components/RoteiroTab";
 import { PainelTab } from "@/components/PainelTab";
 import { LogOut, Users, Plus, MessageSquare, BarChart3 } from "lucide-react";
+import { useAutoProgression } from "@/lib/autoProgression";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
