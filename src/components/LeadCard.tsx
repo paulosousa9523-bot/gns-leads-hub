@@ -68,11 +68,17 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
             <h3 className="font-semibold text-sm truncate flex-1">{lead.nome}</h3>
             <span className="text-[10px] text-muted-foreground shrink-0">{timeAgo(lead.movido_em)}</span>
           </div>
-          {lead.cnpj && <div className="text-[11px] text-muted-foreground/80 truncate">CNPJ {lead.cnpj}</div>}
+          {(lead.cnpj || lead.cpf) && (
+            <div className="text-[11px] text-muted-foreground/80 truncate">
+              {lead.cnpj && <>CNPJ {lead.cnpj}</>}
+              {lead.cnpj && lead.cpf && " · "}
+              {lead.cpf && <>CPF {lead.cpf}</>}
+            </div>
+          )}
           <div className="text-xs text-muted-foreground mt-0.5 truncate">{lead.phone}</div>
-          {(lead.veiculo || lead.tribunal) && (
+          {(lead.tipo_processo || lead.tribunal) && (
             <div className="text-[11px] text-muted-foreground/70 mt-0.5 truncate">
-              {lead.veiculo || "—"} · {lead.tribunal || "—"}
+              {lead.tipo_processo || "—"} · {lead.tribunal || "—"}
             </div>
           )}
           {showVendedor && (
