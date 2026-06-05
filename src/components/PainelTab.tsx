@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { Lead, LeadStatus } from "@/lib/leads";
-import { followupState, STATUS_LABEL, STATUS_ORDER } from "@/lib/leads";
+import { STATUS_LABEL, STATUS_ORDER } from "@/lib/leads";
 import type { Session } from "@/lib/auth";
 import { VENDEDORES } from "@/lib/auth";
 
