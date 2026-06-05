@@ -9,6 +9,13 @@ export type LeadStatus =
   | "contrato"
   | "cliente_fechado";
 
+export const TIPO_PROCESSO_OPTIONS = [
+  "Busca e apreensão",
+  "Execução de títulos extrajudicial",
+  "Execução de títulos fiscal",
+  "Revisional de contrato",
+] as const;
+
 export interface Lead {
   id: string;
   vendedor: string;
@@ -19,7 +26,9 @@ export interface Lead {
   phone4: string | null;
   phone5: string | null;
   cnpj: string | null;
+  cpf: string | null;
   veiculo: string | null;
+  tipo_processo: string | null;
   tribunal: string | null;
   processo: string | null;
   status: LeadStatus;

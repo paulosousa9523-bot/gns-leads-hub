@@ -5,6 +5,7 @@ import {
   STATUS_STYLE,
   STATUS_ORDER,
   DIA_COLUMNS,
+  TIPO_PROCESSO_OPTIONS,
   normalizePhoneForWa,
   timeAgo,
   dayProgress,
@@ -67,11 +68,17 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
             <h3 className="font-semibold text-sm truncate flex-1">{lead.nome}</h3>
             <span className="text-[10px] text-muted-foreground shrink-0">{timeAgo(lead.movido_em)}</span>
           </div>
-          {lead.cnpj && <div className="text-[11px] text-muted-foreground/80 truncate">CNPJ {lead.cnpj}</div>}
+          {(lead.cnpj || lead.cpf) && (
+            <div className="text-[11px] text-muted-foreground/80 truncate">
+              {lead.cnpj && <>CNPJ {lead.cnpj}</>}
+              {lead.cnpj && lead.cpf && " · "}
+              {lead.cpf && <>CPF {lead.cpf}</>}
+            </div>
+          )}
           <div className="text-xs text-muted-foreground mt-0.5 truncate">{lead.phone}</div>
-          {(lead.veiculo || lead.tribunal) && (
+          {(lead.tipo_processo || lead.tribunal) && (
             <div className="text-[11px] text-muted-foreground/70 mt-0.5 truncate">
-              {lead.veiculo || "—"} · {lead.tribunal || "—"}
+              {lead.tipo_processo || "—"} · {lead.tribunal || "—"}
             </div>
           )}
           {showVendedor && (
@@ -152,12 +159,13 @@ function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
   const [form, setForm] = useState({
     nome: lead.nome,
     cnpj: lead.cnpj || "",
+    cpf: lead.cpf || "",
     phone: lead.phone,
     phone2: lead.phone2 || "",
     phone3: lead.phone3 || "",
     phone4: lead.phone4 || "",
     phone5: lead.phone5 || "",
-    veiculo: lead.veiculo || "",
+    tipo_processo: lead.tipo_processo || "",
     tribunal: lead.tribunal || "",
     processo: lead.processo || "",
     status: lead.status,
@@ -171,12 +179,13 @@ function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
     await supabase.from("leads").update({
       nome: form.nome,
       cnpj: form.cnpj || null,
+      cpf: form.cpf || null,
       phone: form.phone,
       phone2: form.phone2 || null,
       phone3: form.phone3 || null,
       phone4: form.phone4 || null,
       phone5: form.phone5 || null,
-      veiculo: form.veiculo || null,
+      tipo_processo: form.tipo_processo || null,
       tribunal: form.tribunal || null,
       processo: form.processo || null,
       status: form.status,
@@ -196,7 +205,10 @@ function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
         </div>
         <div className="p-4 space-y-3">
           <Field label="Nome"><input className="input" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></Field>
-          <Field label="CNPJ"><input className="input" value={form.cnpj} onChange={(e) => setForm({ ...form, cnpj: e.target.value })} /></Field>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="CNPJ"><input className="input" value={form.cnpj} onChange={(e) => setForm({ ...form, cnpj: e.target.value })} /></Field>
+            <Field label="CPF"><input className="input" value={form.cpf} onChange={(e) => setForm({ ...form, cpf: e.target.value })} /></Field>
+          </div>
           <Field label="Telefone 1"><input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field>
           <div className="grid grid-cols-2 gap-2">
             <Field label="Telefone 2"><input className="input" value={form.phone2} onChange={(e) => setForm({ ...form, phone2: e.target.value })} /></Field>
@@ -204,7 +216,12 @@ function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
             <Field label="Telefone 4"><input className="input" value={form.phone4} onChange={(e) => setForm({ ...form, phone4: e.target.value })} /></Field>
             <Field label="Telefone 5"><input className="input" value={form.phone5} onChange={(e) => setForm({ ...form, phone5: e.target.value })} /></Field>
           </div>
-          <Field label="Veículo"><input className="input" value={form.veiculo} onChange={(e) => setForm({ ...form, veiculo: e.target.value })} /></Field>
+          <Field label="Tipo de processo">
+            <select className="input" value={form.tipo_processo} onChange={(e) => setForm({ ...form, tipo_processo: e.target.value })}>
+              <option value="">Selecione...</option>
+              {TIPO_PROCESSO_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </Field>
           <Field label="Tribunal"><input className="input" value={form.tribunal} onChange={(e) => setForm({ ...form, tribunal: e.target.value })} /></Field>
           <Field label="Processo"><input className="input" value={form.processo} onChange={(e) => setForm({ ...form, processo: e.target.value })} /></Field>
           <Field label="Coluna">
