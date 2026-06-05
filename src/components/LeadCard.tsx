@@ -5,6 +5,7 @@ import {
   STATUS_STYLE,
   STATUS_ORDER,
   DIA_COLUMNS,
+  TIPO_PROCESSO_OPTIONS,
   normalizePhoneForWa,
   timeAgo,
   dayProgress,
