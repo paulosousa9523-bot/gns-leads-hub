@@ -17,6 +17,7 @@ export type Database = {
       leads: {
         Row: {
           cnpj: string | null
+          cpf: string | null
           criado: string
           followup: string | null
           id: string
@@ -30,12 +31,14 @@ export type Database = {
           phone5: string | null
           processo: string | null
           status: string
+          tipo_processo: string | null
           tribunal: string | null
           veiculo: string | null
           vendedor: string
         }
         Insert: {
           cnpj?: string | null
+          cpf?: string | null
           criado?: string
           followup?: string | null
           id?: string
@@ -49,12 +52,14 @@ export type Database = {
           phone5?: string | null
           processo?: string | null
           status?: string
+          tipo_processo?: string | null
           tribunal?: string | null
           veiculo?: string | null
           vendedor: string
         }
         Update: {
           cnpj?: string | null
+          cpf?: string | null
           criado?: string
           followup?: string | null
           id?: string
@@ -68,6 +73,7 @@ export type Database = {
           phone5?: string | null
           processo?: string | null
           status?: string
+          tipo_processo?: string | null
           tribunal?: string | null
           veiculo?: string | null
           vendedor?: string
