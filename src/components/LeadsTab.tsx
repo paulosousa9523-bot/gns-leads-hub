@@ -55,7 +55,7 @@ export function LeadsTab({ leads, session }: { leads: Lead[]; session: Session }
 
       {/* Chips mobile para escolher coluna */}
       <div className="lg:hidden flex gap-1.5 overflow-x-auto -mx-4 px-4 pb-1">
-        {STATUS_ORDER.map((s) => {
+        {COLUMNS.map((s) => {
           const n = visibleByCol[s].length;
           return (
             <button
@@ -84,7 +84,7 @@ export function LeadsTab({ leads, session }: { leads: Lead[]; session: Session }
 
       {/* Desktop: kanban horizontal */}
       <div className="hidden lg:flex gap-3 overflow-x-auto pb-3">
-        {STATUS_ORDER.map((s) => (
+        {COLUMNS.map((s) => (
           <div key={s} className="shrink-0 w-72">
             <Column
               col={s}
