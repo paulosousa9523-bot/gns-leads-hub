@@ -64,6 +64,11 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
         className={`bg-surface border border-border border-l-4 ${borderColor} rounded-lg p-3 space-y-2 ${draggable ? "cursor-grab active:cursor-grabbing" : ""}`}
       >
         <button onClick={() => setOpen(!open)} className="w-full text-left">
+          {lead.processo && (
+            <div className="text-[10px] font-mono uppercase tracking-wider text-primary truncate">
+              Proc. {lead.processo}
+            </div>
+          )}
           <div className="flex items-start justify-between gap-2">
             <h3 className="font-semibold text-sm truncate flex-1">{lead.nome}</h3>
             <span className="text-[10px] text-muted-foreground shrink-0">{timeAgo(lead.movido_em)}</span>
