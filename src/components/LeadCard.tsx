@@ -13,6 +13,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@/lib/auth";
 import { MessageCircle, Pencil, X, Download } from "lucide-react";
+import { DocsManager } from "./DocsManager";
 
 interface Props {
   lead: Lead;
