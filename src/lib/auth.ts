@@ -12,9 +12,13 @@ export const VENDEDORES = [
 
 export const GESTOR_NAME = "Paulo (Gestor)";
 export const GESTOR_PASSWORD = "gns2026";
+
+export const JURIDICO_NAME = "Paulo (Jurídico)";
+export const JURIDICO_PASSWORD = "juridico2026";
+
 const KEY = "gns_leads_session";
 
-export type Session = { name: string; isManager: boolean };
+export type Session = { name: string; isManager: boolean; isLegal?: boolean };
 
 export function getSession(): Session | null {
   if (typeof window === "undefined") return null;
