@@ -14,7 +14,36 @@ export const TIPO_PROCESSO_OPTIONS = [
   "Execução de títulos extrajudicial",
   "Execução de títulos fiscal",
   "Revisional de contrato",
+  "Procedimento comum cível",
+  "Monitoria",
 ] as const;
+
+export const DOC_CATEGORIES = [
+  "Petição inicial",
+  "Contrato",
+  "001 PROCURAÇÃO",
+  "002 DECLARAÇÃO DE HIPOSSUFICIÊNCIA",
+  "003 CNH",
+  "004 COMPROVANTE DE RESIDÊNCIA",
+  "005 TRÊS ÚLTIMOS EXTRATOS BANCÁRIOS OU CONTRACHEQUES",
+  "006 CTPS",
+  "007 IRPJ/IRPF",
+  "008 DOCUMENTOS COMPROBATÓRIOS",
+  "Outro",
+] as const;
+
+export type DocCategory = (typeof DOC_CATEGORIES)[number];
+
+export interface LeadDocument {
+  id: string;
+  lead_id: string;
+  categoria: string;
+  nome_arquivo: string;
+  storage_path: string;
+  mime_type: string | null;
+  tamanho: number | null;
+  criado: string;
+}
 
 export interface Lead {
   id: string;
