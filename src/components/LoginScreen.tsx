@@ -1,18 +1,36 @@
 import { useState } from "react";
-import { GESTOR_NAME, GESTOR_PASSWORD, setSession, VENDEDORES, type Session } from "@/lib/auth";
+import {
+  GESTOR_NAME,
+  GESTOR_PASSWORD,
+  JURIDICO_NAME,
+  JURIDICO_PASSWORD,
+  setSession,
+  VENDEDORES,
+  type Session,
+} from "@/lib/auth";
 
 export function LoginScreen({ onLogin }: { onLogin: (s: Session) => void }) {
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
 
+  const needsPassword = name === "__gestor" || name === "__juridico";
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     setErr("");
     if (!name) return setErr("Selecione um nome");
+
     if (name === "__gestor") {
       if (password !== GESTOR_PASSWORD) return setErr("Senha incorreta");
       const s: Session = { name: GESTOR_NAME, isManager: true };
+      setSession(s);
+      onLogin(s);
+      return;
+    }
+    if (name === "__juridico") {
+      if (password !== JURIDICO_PASSWORD) return setErr("Senha incorreta");
+      const s: Session = { name: JURIDICO_NAME, isManager: true, isLegal: true };
       setSession(s);
       onLogin(s);
       return;
@@ -21,8 +39,6 @@ export function LoginScreen({ onLogin }: { onLogin: (s: Session) => void }) {
     setSession(s);
     onLogin(s);
   };
-
-  const isGestor = name === "__gestor";
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
@@ -48,13 +64,14 @@ export function LoginScreen({ onLogin }: { onLogin: (s: Session) => void }) {
             </optgroup>
             <optgroup label="Gestão">
               <option value="__gestor">{GESTOR_NAME}</option>
+              <option value="__juridico">{JURIDICO_NAME}</option>
             </optgroup>
           </select>
         </div>
 
-        {isGestor && (
+        {needsPassword && (
           <div className="space-y-2">
-            <label className="text-xs uppercase tracking-wider text-muted-foreground">Senha do gestor</label>
+            <label className="text-xs uppercase tracking-wider text-muted-foreground">Senha</label>
             <input
               type="password"
               value={password}
