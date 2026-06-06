@@ -210,6 +210,7 @@ function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
           <button onClick={onClose}><X className="w-5 h-5" /></button>
         </div>
         <div className="p-4 space-y-3">
+          <Field label="Número do processo"><input className="input" value={form.processo} onChange={(e) => setForm({ ...form, processo: e.target.value })} /></Field>
           <Field label="Nome"><input className="input" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></Field>
           <div className="grid grid-cols-2 gap-2">
             <Field label="CNPJ"><input className="input" value={form.cnpj} onChange={(e) => setForm({ ...form, cnpj: e.target.value })} /></Field>
@@ -229,7 +230,6 @@ function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
             </select>
           </Field>
           <Field label="Tribunal"><input className="input" value={form.tribunal} onChange={(e) => setForm({ ...form, tribunal: e.target.value })} /></Field>
-          <Field label="Processo"><input className="input" value={form.processo} onChange={(e) => setForm({ ...form, processo: e.target.value })} /></Field>
           <Field label="Coluna">
             <select className="input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Lead["status"] })}>
               {STATUS_ORDER.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
@@ -238,6 +238,9 @@ function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
           <Field label="Observações">
             <textarea className="input min-h-[80px]" value={form.obs} onChange={(e) => setForm({ ...form, obs: e.target.value })} />
           </Field>
+          <div className="pt-2 border-t border-border">
+            <DocsManager leadId={lead.id} />
+          </div>
         </div>
         <div className="p-4 border-t border-border flex gap-2 sticky bottom-0 bg-surface">
           <button onClick={onClose} className="flex-1 bg-muted border border-border rounded-lg py-2.5 font-semibold">Cancelar</button>
