@@ -6,14 +6,20 @@ import type { Session } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 
 export function LeadsTab({ leads, session }: { leads: Lead[]; session: Session }) {
-  const [activeCol, setActiveCol] = useState<LeadStatus>("funil");
+  // Paulo Jurídico vê apenas as colunas de fechamento
+  const COLUMNS: LeadStatus[] = session.isLegal
+    ? (["contrato", "cliente_fechado"] as LeadStatus[])
+    : STATUS_ORDER;
+
+  const [activeCol, setActiveCol] = useState<LeadStatus>(COLUMNS[0]);
 
   // Visibilidade por coluna:
+  //  - Jurídico: vê todos os contratos fechados de todos os vendedores
   //  - Funil: todos veem tudo
   //  - Demais: vendedor só vê os próprios; gestor vê tudo
   const visibleByCol = useMemo(() => {
     const map = {} as Record<LeadStatus, Lead[]>;
-    for (const s of STATUS_ORDER) {
+    for (const s of COLUMNS) {
       const inCol = leads.filter((l) => l.status === s);
       if (s === "funil" || session.isManager) {
         map[s] = inCol;
@@ -22,7 +28,7 @@ export function LeadsTab({ leads, session }: { leads: Lead[]; session: Session }
       }
     }
     return map;
-  }, [leads, session]);
+  }, [leads, session, COLUMNS]);
 
   const onDrop = async (e: React.DragEvent, col: LeadStatus) => {
     e.preventDefault();
