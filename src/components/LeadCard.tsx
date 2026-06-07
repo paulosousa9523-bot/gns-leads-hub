@@ -210,28 +210,7 @@ function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
     onClose();
   };
 
-  const save = async () => {
-    setSaving(true);
-    const statusChanged = form.status !== lead.status;
-    await supabase.from("leads").update({
-      nome: form.nome,
-      cnpj: form.cnpj || null,
-      cpf: form.cpf || null,
-      phone: form.phone,
-      phone2: form.phone2 || null,
-      phone3: form.phone3 || null,
-      phone4: form.phone4 || null,
-      phone5: form.phone5 || null,
-      tipo_processo: form.tipo_processo || null,
-      tribunal: form.tribunal || null,
-      processo: form.processo || null,
-      status: form.status,
-      obs: form.obs || null,
-      ...(statusChanged ? { movido_em: new Date().toISOString() } : {}),
-    }).eq("id", lead.id);
-    setSaving(false);
-    onClose();
-  };
+
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4">
