@@ -113,6 +113,7 @@ function Column({
   allowDrop: (e: React.DragEvent) => void;
 }) {
   const isFunil = col === "funil";
+  const isShared = ["funil", "negociacao", "contrato", "cliente_fechado"].includes(col);
   return (
     <div
       onDragOver={allowDrop}
