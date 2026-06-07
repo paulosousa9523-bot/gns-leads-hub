@@ -1,8 +1,19 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { STATUS_LABEL, STATUS_ORDER, TIPO_PROCESSO_OPTIONS, type LeadStatus } from "@/lib/leads";
+import {
+  STATUS_LABEL,
+  STATUS_ORDER,
+  TIPO_PROCESSO_OPTIONS,
+  PROCESS_DOC_CATEGORIES,
+  OBS_DOC_CATEGORIES,
+  type LeadStatus,
+} from "@/lib/leads";
 import type { Session } from "@/lib/auth";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Paperclip, Trash2, Upload } from "lucide-react";
+
+type Pending = { file: File; categoria: string; id: string };
+
+const BUCKET = "lead-docs";
 
 export function NewLeadTab({ session }: { session: Session }) {
   const [form, setForm] = useState({
@@ -17,14 +28,18 @@ export function NewLeadTab({ session }: { session: Session }) {
     phone5: "",
     tipo_processo: "",
     tribunal: "",
+    valor_causa: "",
     status: "dia_1" as LeadStatus,
     obs: "",
   });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
   const [dup, setDup] = useState<{ nome: string; vendedor: string } | null>(null);
+  const [procDocs, setProcDocs] = useState<Pending[]>([]);
+  const [procCat, setProcCat] = useState<string>(PROCESS_DOC_CATEGORIES[0]);
+  const [obsDocs, setObsDocs] = useState<Pending[]>([]);
+  const [obsCat, setObsCat] = useState<string>(OBS_DOC_CATEGORIES[0]);
 
-  // Verifica duplicidade de processo
   useEffect(() => {
     const proc = form.processo.trim();
     if (!proc) { setDup(null); return; }
@@ -39,6 +54,38 @@ export function NewLeadTab({ session }: { session: Session }) {
     return () => clearTimeout(t);
   }, [form.processo]);
 
+  const addPending = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    cat: string,
+    setter: React.Dispatch<React.SetStateAction<Pending[]>>
+  ) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setter((cur) => [
+      ...cur,
+      ...files.map((f) => ({ file: f, categoria: cat, id: `${Date.now()}_${Math.random()}` })),
+    ]);
+    e.target.value = "";
+  };
+
+  const uploadAll = async (leadId: string, items: Pending[]) => {
+    for (const it of items) {
+      const safe = it.file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `${leadId}/${Date.now()}_${safe}`;
+      const { error } = await supabase.storage.from(BUCKET).upload(path, it.file);
+      if (!error) {
+        await supabase.from("lead_documents").insert({
+          lead_id: leadId,
+          categoria: it.categoria,
+          nome_arquivo: it.file.name,
+          storage_path: path,
+          mime_type: it.file.type || null,
+          tamanho: it.file.size,
+        });
+      }
+    }
+  };
+
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.nome || !form.phone) {
@@ -51,7 +98,7 @@ export function NewLeadTab({ session }: { session: Session }) {
     }
     setSaving(true);
     setMsg("");
-    const { error } = await supabase.from("leads").insert({
+    const { data, error } = await supabase.from("leads").insert({
       vendedor: session.name,
       nome: form.nome,
       cnpj: form.cnpj || null,
@@ -64,21 +111,25 @@ export function NewLeadTab({ session }: { session: Session }) {
       tipo_processo: form.tipo_processo || null,
       tribunal: form.tribunal || null,
       processo: form.processo || null,
+      valor_causa: form.valor_causa ? Number(form.valor_causa.replace(",", ".")) : null,
       status: form.status,
       obs: form.obs || null,
       movido_em: new Date().toISOString(),
-    });
-    setSaving(false);
-    if (error) {
-      setMsg("Erro: " + error.message);
-    } else {
-      setMsg("Lead salvo!");
-      setForm({
-        processo: "", nome: "", cnpj: "", cpf: "", phone: "", phone2: "", phone3: "", phone4: "", phone5: "",
-        tipo_processo: "", tribunal: "", status: "dia_1", obs: "",
-      });
-      setTimeout(() => setMsg(""), 2000);
+    }).select("id").single();
+    if (error || !data) {
+      setSaving(false);
+      setMsg("Erro: " + (error?.message || "falha ao salvar"));
+      return;
     }
+    await uploadAll(data.id, [...procDocs, ...obsDocs]);
+    setSaving(false);
+    setMsg("Lead salvo!");
+    setForm({
+      processo: "", nome: "", cnpj: "", cpf: "", phone: "", phone2: "", phone3: "", phone4: "", phone5: "",
+      tipo_processo: "", tribunal: "", valor_causa: "", status: "dia_1", obs: "",
+    });
+    setProcDocs([]); setObsDocs([]);
+    setTimeout(() => setMsg(""), 2000);
   };
 
   return (
@@ -101,6 +152,17 @@ export function NewLeadTab({ session }: { session: Session }) {
         </div>
       )}
 
+      {/* Área de anexos do processo (ao lado/abaixo do nº do processo) */}
+      <PendingDocs
+        title="Documentos do processo"
+        cats={PROCESS_DOC_CATEGORIES}
+        cat={procCat}
+        setCat={setProcCat}
+        docs={procDocs}
+        setDocs={setProcDocs}
+        onAdd={(e) => addPending(e, procCat, setProcDocs)}
+      />
+
       <Field label="Nome do cliente *"><input required className="input" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="CNPJ"><input className="input" placeholder="00.000.000/0000-00" value={form.cnpj} onChange={(e) => setForm({ ...form, cnpj: e.target.value })} /></Field>
@@ -120,20 +182,81 @@ export function NewLeadTab({ session }: { session: Session }) {
         </select>
       </Field>
       <Field label="Tribunal"><input className="input" placeholder="Ex: TJ-SP" value={form.tribunal} onChange={(e) => setForm({ ...form, tribunal: e.target.value })} /></Field>
+      <Field label="Valor da causa (R$)">
+        <input className="input" inputMode="decimal" placeholder="0,00" value={form.valor_causa} onChange={(e) => setForm({ ...form, valor_causa: e.target.value })} />
+      </Field>
       <Field label="Coluna inicial">
         <select className="input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as LeadStatus })}>
           {STATUS_ORDER.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
         </select>
       </Field>
-      <Field label="Observações (petição inicial e contrato podem ser anexados após salvar, dentro do card)">
+      <Field label="Observações">
         <textarea className="input min-h-[80px]" value={form.obs} onChange={(e) => setForm({ ...form, obs: e.target.value })} />
       </Field>
+
+      {/* Anexos dentro de Observações: apenas Petição Inicial e Contrato */}
+      <PendingDocs
+        title="Anexos das observações (Petição Inicial / Contrato)"
+        cats={OBS_DOC_CATEGORIES}
+        cat={obsCat}
+        setCat={setObsCat}
+        docs={obsDocs}
+        setDocs={setObsDocs}
+        onAdd={(e) => addPending(e, obsCat, setObsDocs)}
+      />
+
       {msg && <div className="text-sm text-primary">{msg}</div>}
       <button type="submit" disabled={saving || !!dup} className="w-full bg-primary text-primary-foreground font-semibold rounded-lg py-2.5 disabled:opacity-50">
         {saving ? "Salvando..." : "Salvar lead"}
       </button>
       <style>{`.input{width:100%;background:var(--color-muted);border:1px solid var(--color-border);border-radius:0.5rem;padding:0.5rem 0.75rem;font-size:0.875rem;color:var(--color-foreground)}.input:focus{outline:none;border-color:var(--color-primary)}`}</style>
     </form>
+  );
+}
+
+function PendingDocs({
+  title, cats, cat, setCat, docs, setDocs, onAdd,
+}: {
+  title: string;
+  cats: readonly string[];
+  cat: string;
+  setCat: (v: string) => void;
+  docs: Pending[];
+  setDocs: React.Dispatch<React.SetStateAction<Pending[]>>;
+  onAdd: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <div className="bg-muted/30 border border-border rounded-lg p-2.5 space-y-2">
+      <div className="flex items-center gap-2">
+        <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{title} ({docs.length})</span>
+      </div>
+      <div className="flex gap-2">
+        <select className="flex-1 bg-muted border border-border rounded-md px-2 py-1.5 text-xs" value={cat} onChange={(e) => setCat(e.target.value)}>
+          {cats.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <label className="inline-flex items-center gap-1 bg-primary text-primary-foreground text-xs font-semibold px-2.5 py-1.5 rounded-md cursor-pointer">
+          <Upload className="w-3 h-3" /> Anexar
+          <input type="file" multiple className="hidden" onChange={onAdd} />
+        </label>
+      </div>
+      {docs.length > 0 && (
+        <ul className="space-y-1">
+          {docs.map((d) => (
+            <li key={d.id} className="flex items-center justify-between gap-2 bg-background border border-border rounded-md px-2 py-1.5">
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] text-primary font-semibold truncate">{d.categoria}</div>
+                <div className="text-xs truncate">{d.file.name}</div>
+              </div>
+              <button type="button" onClick={() => setDocs((cur) => cur.filter((x) => x.id !== d.id))} className="text-danger p-1" title="Remover">
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="text-[10px] text-muted-foreground">Os arquivos são enviados ao salvar o lead.</div>
+    </div>
   );
 }
 
