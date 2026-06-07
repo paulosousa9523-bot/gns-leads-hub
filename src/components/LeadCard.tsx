@@ -180,10 +180,35 @@ function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
     tipo_processo: lead.tipo_processo || "",
     tribunal: lead.tribunal || "",
     processo: lead.processo || "",
+    valor_causa: lead.valor_causa != null ? String(lead.valor_causa) : "",
     status: lead.status,
     obs: lead.obs || "",
   });
   const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    setSaving(true);
+    const statusChanged = form.status !== lead.status;
+    await supabase.from("leads").update({
+      nome: form.nome,
+      cnpj: form.cnpj || null,
+      cpf: form.cpf || null,
+      phone: form.phone,
+      phone2: form.phone2 || null,
+      phone3: form.phone3 || null,
+      phone4: form.phone4 || null,
+      phone5: form.phone5 || null,
+      tipo_processo: form.tipo_processo || null,
+      tribunal: form.tribunal || null,
+      processo: form.processo || null,
+      valor_causa: form.valor_causa ? Number(form.valor_causa.replace(",", ".")) : null,
+      status: form.status,
+      obs: form.obs || null,
+      ...(statusChanged ? { movido_em: new Date().toISOString() } : {}),
+    }).eq("id", lead.id);
+    setSaving(false);
+    onClose();
+  };
 
   const save = async () => {
     setSaving(true);
