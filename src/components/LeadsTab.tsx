@@ -138,7 +138,7 @@ function Column({
               key={l.id}
               lead={l}
               session={session}
-              showVendedor={isFunil || session.isManager}
+              showVendedor={isShared || session.isManager}
               showPullButton={showPull}
               draggable={session.isManager || isOwn}
             />
