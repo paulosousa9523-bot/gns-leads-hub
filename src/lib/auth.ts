@@ -8,6 +8,12 @@ export const VENDEDORES = [
   "Gabriel Morais",
   "Luiz Guilherme",
   "Evandro",
+  "Augusto Santos",
+  "Matheus Fiaux",
+  "Vitor Benício",
+  "Josiane Cardoso",
+  "Rafael Chagas",
+  "Vitor Damasceno",
 ];
 
 export const GESTOR_NAME = "Paulo (Gestor)";
