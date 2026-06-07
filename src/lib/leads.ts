@@ -70,6 +70,7 @@ export interface Lead {
   tipo_processo: string | null;
   tribunal: string | null;
   processo: string | null;
+  valor_causa: number | null;
   status: LeadStatus;
   obs: string | null;
   followup: string | null;
