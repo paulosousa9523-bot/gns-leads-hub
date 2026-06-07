@@ -5,9 +5,20 @@ import { Paperclip, Trash2, Download, Upload } from "lucide-react";
 
 const BUCKET = "lead-docs";
 
-export function DocsManager({ leadId }: { leadId: string }) {
+interface Props {
+  leadId: string;
+  /** Categorias selecionáveis no dropdown (default: todas) */
+  categories?: readonly string[];
+  /** Filtrar lista exibida apenas para essas categorias (default: as do dropdown) */
+  filterCategories?: readonly string[];
+  title?: string;
+}
+
+export function DocsManager({ leadId, categories, filterCategories, title }: Props) {
+  const cats = categories && categories.length ? categories : DOC_CATEGORIES;
+  const filter = filterCategories ?? cats;
   const [docs, setDocs] = useState<LeadDocument[]>([]);
-  const [categoria, setCategoria] = useState<string>(DOC_CATEGORIES[0]);
+  const [categoria, setCategoria] = useState<string>(cats[0]);
   const [uploading, setUploading] = useState(false);
 
   const load = async () => {
@@ -15,12 +26,14 @@ export function DocsManager({ leadId }: { leadId: string }) {
       .from("lead_documents")
       .select("*")
       .eq("lead_id", leadId)
+      .in("categoria", filter as string[])
       .order("criado", { ascending: false });
     setDocs((data as LeadDocument[]) || []);
   };
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leadId]);
 
   const upload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,11 +72,16 @@ export function DocsManager({ leadId }: { leadId: string }) {
     load();
   };
 
+  const fmtDate = (iso: string) =>
+    new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
+
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
-        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Documentos ({docs.length})</span>
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          {title || "Documentos"} ({docs.length})
+        </span>
       </div>
       <div className="flex gap-2">
         <select
@@ -71,7 +89,7 @@ export function DocsManager({ leadId }: { leadId: string }) {
           value={categoria}
           onChange={(e) => setCategoria(e.target.value)}
         >
-          {DOC_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          {cats.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
         <label className={`inline-flex items-center gap-1 bg-primary text-primary-foreground text-xs font-semibold px-2.5 py-1.5 rounded-md cursor-pointer ${uploading ? "opacity-50" : ""}`}>
           <Upload className="w-3 h-3" />
@@ -86,8 +104,9 @@ export function DocsManager({ leadId }: { leadId: string }) {
               <div className="min-w-0 flex-1">
                 <div className="text-[10px] text-primary font-semibold truncate">{d.categoria}</div>
                 <div className="text-xs truncate">{d.nome_arquivo}</div>
+                <div className="text-[10px] text-muted-foreground">{fmtDate(d.criado)}</div>
               </div>
-              <button onClick={() => openDoc(d)} className="text-primary p-1" title="Abrir">
+              <button onClick={() => openDoc(d)} className="text-primary p-1" title="Abrir/Baixar">
                 <Download className="w-3.5 h-3.5" />
               </button>
               <button onClick={() => removeDoc(d)} className="text-danger p-1" title="Remover">

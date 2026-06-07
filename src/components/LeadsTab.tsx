@@ -13,15 +13,14 @@ export function LeadsTab({ leads, session }: { leads: Lead[]; session: Session }
 
   const [activeCol, setActiveCol] = useState<LeadStatus>(COLUMNS[0]);
 
-  // Visibilidade por coluna:
-  //  - Jurídico: vê todos os contratos fechados de todos os vendedores
-  //  - Funil: todos veem tudo
-  //  - Demais: vendedor só vê os próprios; gestor vê tudo
+  // Colunas em que TODOS os vendedores enxergam todos os leads
+  const SHARED_COLS: LeadStatus[] = ["funil", "negociacao", "contrato", "cliente_fechado"];
+
   const visibleByCol = useMemo(() => {
     const map = {} as Record<LeadStatus, Lead[]>;
     for (const s of COLUMNS) {
       const inCol = leads.filter((l) => l.status === s);
-      if (s === "funil" || session.isManager) {
+      if (SHARED_COLS.includes(s) || session.isManager) {
         map[s] = inCol;
       } else {
         map[s] = inCol.filter((l) => l.vendedor === session.name);
@@ -114,6 +113,7 @@ function Column({
   allowDrop: (e: React.DragEvent) => void;
 }) {
   const isFunil = col === "funil";
+  const isShared = ["funil", "negociacao", "contrato", "cliente_fechado"].includes(col);
   return (
     <div
       onDragOver={allowDrop}
@@ -138,7 +138,7 @@ function Column({
               key={l.id}
               lead={l}
               session={session}
-              showVendedor={isFunil || session.isManager}
+              showVendedor={isShared || session.isManager}
               showPullButton={showPull}
               draggable={session.isManager || isOwn}
             />

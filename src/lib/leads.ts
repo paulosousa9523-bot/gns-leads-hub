@@ -18,18 +18,28 @@ export const TIPO_PROCESSO_OPTIONS = [
   "Monitoria",
 ] as const;
 
-export const DOC_CATEGORIES = [
-  "Petição inicial",
-  "Contrato",
+// Categorias da área principal (ao lado do Número do Processo)
+export const PROCESS_DOC_CATEGORIES = [
   "001 PROCURAÇÃO",
   "002 DECLARAÇÃO DE HIPOSSUFICIÊNCIA",
   "003 CNH",
   "004 COMPROVANTE DE RESIDÊNCIA",
   "005 TRÊS ÚLTIMOS EXTRATOS BANCÁRIOS OU CONTRACHEQUES",
-  "006 CTPS",
-  "007 IRPJ/IRPF",
-  "008 DOCUMENTOS COMPROBATÓRIOS",
-  "Outro",
+  "006 DOCUMENTOS COMPROBATÓRIOS",
+  "007 CTPS",
+  "008 IRPJ",
+] as const;
+
+// Categorias permitidas dentro da área de Observações
+export const OBS_DOC_CATEGORIES = [
+  "Petição Inicial",
+  "Contrato de Financiamento ou Empréstimo",
+] as const;
+
+// Lista completa (compatibilidade)
+export const DOC_CATEGORIES = [
+  ...PROCESS_DOC_CATEGORIES,
+  ...OBS_DOC_CATEGORIES,
 ] as const;
 
 export type DocCategory = (typeof DOC_CATEGORIES)[number];
@@ -60,6 +70,7 @@ export interface Lead {
   tipo_processo: string | null;
   tribunal: string | null;
   processo: string | null;
+  valor_causa: number | null;
   status: LeadStatus;
   obs: string | null;
   followup: string | null;

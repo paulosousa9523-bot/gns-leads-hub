@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@/lib/auth";
 import { MessageCircle, Pencil, X, Download } from "lucide-react";
 import { DocsManager } from "./DocsManager";
+import { PROCESS_DOC_CATEGORIES, OBS_DOC_CATEGORIES } from "@/lib/leads";
 
 interface Props {
   lead: Lead;
@@ -85,6 +86,11 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
           {(lead.tipo_processo || lead.tribunal) && (
             <div className="text-[11px] text-muted-foreground/70 mt-0.5 truncate">
               {lead.tipo_processo || "—"} · {lead.tribunal || "—"}
+            </div>
+          )}
+          {lead.valor_causa != null && (
+            <div className="text-[11px] text-primary/90 mt-0.5 truncate">
+              Valor da causa: {Number(lead.valor_causa).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
             </div>
           )}
           {showVendedor && (
@@ -174,6 +180,7 @@ function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
     tipo_processo: lead.tipo_processo || "",
     tribunal: lead.tribunal || "",
     processo: lead.processo || "",
+    valor_causa: lead.valor_causa != null ? String(lead.valor_causa) : "",
     status: lead.status,
     obs: lead.obs || "",
   });
@@ -194,6 +201,7 @@ function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
       tipo_processo: form.tipo_processo || null,
       tribunal: form.tribunal || null,
       processo: form.processo || null,
+      valor_causa: form.valor_causa ? Number(form.valor_causa.replace(",", ".")) : null,
       status: form.status,
       obs: form.obs || null,
       ...(statusChanged ? { movido_em: new Date().toISOString() } : {}),
@@ -201,6 +209,8 @@ function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
     setSaving(false);
     onClose();
   };
+
+
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -210,7 +220,17 @@ function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
           <button onClick={onClose}><X className="w-5 h-5" /></button>
         </div>
         <div className="p-4 space-y-3">
-          <Field label="Número do processo"><input className="input" value={form.processo} onChange={(e) => setForm({ ...form, processo: e.target.value })} /></Field>
+          <div className="space-y-2">
+            <Field label="Número do processo"><input className="input" value={form.processo} onChange={(e) => setForm({ ...form, processo: e.target.value })} /></Field>
+            <div className="bg-muted/30 border border-border rounded-lg p-2.5">
+              <DocsManager
+                leadId={lead.id}
+                categories={PROCESS_DOC_CATEGORIES}
+                filterCategories={PROCESS_DOC_CATEGORIES}
+                title="Documentos do processo"
+              />
+            </div>
+          </div>
           <Field label="Nome"><input className="input" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></Field>
           <div className="grid grid-cols-2 gap-2">
             <Field label="CNPJ"><input className="input" value={form.cnpj} onChange={(e) => setForm({ ...form, cnpj: e.target.value })} /></Field>
@@ -230,6 +250,9 @@ function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
             </select>
           </Field>
           <Field label="Tribunal"><input className="input" value={form.tribunal} onChange={(e) => setForm({ ...form, tribunal: e.target.value })} /></Field>
+          <Field label="Valor da causa (R$)">
+            <input className="input" inputMode="decimal" placeholder="0,00" value={form.valor_causa} onChange={(e) => setForm({ ...form, valor_causa: e.target.value })} />
+          </Field>
           <Field label="Coluna">
             <select className="input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Lead["status"] })}>
               {STATUS_ORDER.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
@@ -238,8 +261,13 @@ function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
           <Field label="Observações">
             <textarea className="input min-h-[80px]" value={form.obs} onChange={(e) => setForm({ ...form, obs: e.target.value })} />
           </Field>
-          <div className="pt-2 border-t border-border">
-            <DocsManager leadId={lead.id} />
+          <div className="bg-muted/30 border border-border rounded-lg p-2.5">
+            <DocsManager
+              leadId={lead.id}
+              categories={OBS_DOC_CATEGORIES}
+              filterCategories={OBS_DOC_CATEGORIES}
+              title="Anexos das observações (Petição Inicial / Contrato)"
+            />
           </div>
         </div>
         <div className="p-4 border-t border-border flex gap-2 sticky bottom-0 bg-surface">
