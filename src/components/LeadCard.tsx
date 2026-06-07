@@ -88,6 +88,11 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
               {lead.tipo_processo || "—"} · {lead.tribunal || "—"}
             </div>
           )}
+          {lead.valor_causa != null && (
+            <div className="text-[11px] text-primary/90 mt-0.5 truncate">
+              Valor da causa: {Number(lead.valor_causa).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+            </div>
+          )}
           {showVendedor && (
             <div className="inline-block mt-1.5 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
               {lead.vendedor}
