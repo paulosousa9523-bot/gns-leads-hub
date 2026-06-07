@@ -74,6 +74,7 @@ export type Database = {
           status: string
           tipo_processo: string | null
           tribunal: string | null
+          valor_causa: number | null
           veiculo: string | null
           vendedor: string
         }
@@ -95,6 +96,7 @@ export type Database = {
           status?: string
           tipo_processo?: string | null
           tribunal?: string | null
+          valor_causa?: number | null
           veiculo?: string | null
           vendedor: string
         }
@@ -116,6 +118,7 @@ export type Database = {
           status?: string
           tipo_processo?: string | null
           tribunal?: string | null
+          valor_causa?: number | null
           veiculo?: string | null
           vendedor?: string
         }
