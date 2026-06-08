@@ -45,6 +45,7 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
   const phones = [lead.phone, lead.phone2, lead.phone3, lead.phone4, lead.phone5].filter(Boolean) as string[];
 
   const openWa = (p: string) => {
+    logAction(session.name, "whatsapp_clique", lead.id, { telefone: p });
     window.open(`https://wa.me/${normalizePhoneForWa(p)}`, "_blank");
   };
 
@@ -55,6 +56,13 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
       status: "dia_1",
       movido_em: new Date().toISOString(),
     }).eq("id", lead.id);
+    logAction(session.name, "lead_puxado", lead.id, { de_vendedor: lead.vendedor });
+  };
+
+  const toggleOpen = () => {
+    const next = !open;
+    setOpen(next);
+    if (next) logAction(session.name, "lead_aberto", lead.id);
   };
 
   const onDragStart = (e: React.DragEvent) => {
