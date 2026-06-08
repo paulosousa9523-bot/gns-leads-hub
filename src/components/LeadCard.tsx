@@ -16,6 +16,7 @@ import type { Session } from "@/lib/auth";
 import { MessageCircle, Pencil, X, Download } from "lucide-react";
 import { DocsManager } from "./DocsManager";
 import { PROCESS_DOC_CATEGORIES, OBS_DOC_CATEGORIES } from "@/lib/leads";
+import { logAction } from "@/lib/actionLog";
 
 interface Props {
   lead: Lead;
@@ -44,6 +45,7 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
   const phones = [lead.phone, lead.phone2, lead.phone3, lead.phone4, lead.phone5].filter(Boolean) as string[];
 
   const openWa = (p: string) => {
+    logAction(session.name, "whatsapp_clique", lead.id, { telefone: p });
     window.open(`https://wa.me/${normalizePhoneForWa(p)}`, "_blank");
   };
 
@@ -54,6 +56,13 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
       status: "dia_1",
       movido_em: new Date().toISOString(),
     }).eq("id", lead.id);
+    logAction(session.name, "lead_puxado", lead.id, { de_vendedor: lead.vendedor });
+  };
+
+  const toggleOpen = () => {
+    const next = !open;
+    setOpen(next);
+    if (next) logAction(session.name, "lead_aberto", lead.id);
   };
 
   const onDragStart = (e: React.DragEvent) => {
@@ -68,7 +77,7 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
         onDragStart={draggable ? onDragStart : undefined}
         className={`bg-surface border border-border border-l-4 ${borderColor} rounded-lg p-3 space-y-2 ${draggable ? "cursor-grab active:cursor-grabbing" : ""}`}
       >
-        <button onClick={() => setOpen(!open)} className="w-full text-left">
+        <button onClick={toggleOpen} className="w-full text-left">
           {lead.processo && (
             <div className="text-[10px] font-mono uppercase tracking-wider text-primary truncate">
               Proc. {lead.processo}
@@ -165,12 +174,12 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
         )}
       </div>
 
-      {edit && <EditModal lead={lead} onClose={() => setEdit(false)} />}
+      {edit && <EditModal lead={lead} session={session} onClose={() => setEdit(false)} />}
     </>
   );
 }
 
-function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
+function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; onClose: () => void }) {
   const [form, setForm] = useState({
     nome: lead.nome,
     cnpj: lead.cnpj || "",
@@ -192,6 +201,14 @@ function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
   const save = async () => {
     setSaving(true);
     const statusChanged = form.status !== lead.status;
+    const obsChanged = (form.obs || "") !== (lead.obs || "");
+    const changedFields: string[] = [];
+    const fields: (keyof typeof form)[] = ["nome","cnpj","cpf","phone","phone2","phone3","phone4","phone5","tipo_processo","tribunal","processo","valor_causa"];
+    for (const f of fields) {
+      const before = (lead as unknown as Record<string, unknown>)[f];
+      const after = form[f];
+      if ((before ?? "") !== (after ?? "")) changedFields.push(f);
+    }
     await supabase.from("leads").update({
       nome: form.nome,
       cnpj: form.cnpj || null,
@@ -209,6 +226,18 @@ function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
       obs: form.obs || null,
       ...(statusChanged ? { movido_em: new Date().toISOString() } : {}),
     }).eq("id", lead.id);
+    if (changedFields.length) {
+      logAction(session.name, "edicao", lead.id, { campos: changedFields });
+    }
+    if (obsChanged) {
+      logAction(session.name, "observacao_alterada", lead.id);
+    }
+    if (statusChanged) {
+      logAction(session.name, "status_alterado", lead.id, { de: lead.status, para: form.status });
+      if (form.status === "cliente_fechado") {
+        logAction(session.name, "lead_fechado", lead.id);
+      }
+    }
     setSaving(false);
     onClose();
   };

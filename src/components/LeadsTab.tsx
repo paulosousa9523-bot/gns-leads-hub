@@ -4,6 +4,7 @@ import { STATUS_LABEL, STATUS_ORDER } from "@/lib/leads";
 import { LeadCard } from "./LeadCard";
 import type { Session } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
+import { logAction } from "@/lib/actionLog";
 
 export function LeadsTab({ leads, session }: { leads: Lead[]; session: Session }) {
   // Paulo Jurídico vê apenas as colunas de fechamento
@@ -36,11 +37,12 @@ export function LeadsTab({ leads, session }: { leads: Lead[]; session: Session }
     const lead = leads.find((l) => l.id === id);
     if (!lead || lead.status === col) return;
     const patch: Partial<Lead> = { status: col, movido_em: new Date().toISOString() };
-    // Se puxar do Funil Geral para uma coluna de esteira, vira do vendedor logado
-    if (lead.status === "funil" && col !== "funil" && !session.isManager) {
-      patch.vendedor = session.name;
-    }
+    const pulled = lead.status === "funil" && col !== "funil" && !session.isManager;
+    if (pulled) patch.vendedor = session.name;
     await supabase.from("leads").update(patch).eq("id", lead.id);
+    logAction(session.name, "status_alterado", lead.id, { de: lead.status, para: col });
+    if (col === "cliente_fechado") logAction(session.name, "lead_fechado", lead.id);
+    if (pulled) logAction(session.name, "lead_puxado", lead.id, { de_vendedor: lead.vendedor });
   };
 
   const allowDrop = (e: React.DragEvent) => e.preventDefault();

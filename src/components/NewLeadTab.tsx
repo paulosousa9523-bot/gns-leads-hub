@@ -10,6 +10,7 @@ import {
 } from "@/lib/leads";
 import type { Session } from "@/lib/auth";
 import { AlertTriangle, Paperclip, Trash2, Upload } from "lucide-react";
+import { logAction } from "@/lib/actionLog";
 
 type Pending = { file: File; categoria: string; id: string };
 
@@ -82,6 +83,11 @@ export function NewLeadTab({ session }: { session: Session }) {
           mime_type: it.file.type || null,
           tamanho: it.file.size,
         });
+        logAction(session.name, "anexo_adicionado", leadId, {
+          categoria: it.categoria,
+          nome_arquivo: it.file.name,
+          tamanho: it.file.size,
+        });
       }
     }
   };
@@ -121,6 +127,7 @@ export function NewLeadTab({ session }: { session: Session }) {
       setMsg("Erro: " + (error?.message || "falha ao salvar"));
       return;
     }
+    logAction(session.name, "lead_criado", data.id, { nome: form.nome, status: form.status, processo: form.processo || null });
     await uploadAll(data.id, [...procDocs, ...obsDocs]);
     setSaving(false);
     setMsg("Lead salvo!");
