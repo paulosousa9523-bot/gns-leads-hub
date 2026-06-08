@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DOC_CATEGORIES, type LeadDocument } from "@/lib/leads";
 import { Paperclip, Trash2, Download, Upload } from "lucide-react";
+import { logAction } from "@/lib/actionLog";
+import { getSession } from "@/lib/auth";
 
 const BUCKET = "lead-docs";
 
