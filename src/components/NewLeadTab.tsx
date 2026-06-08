@@ -83,6 +83,11 @@ export function NewLeadTab({ session }: { session: Session }) {
           mime_type: it.file.type || null,
           tamanho: it.file.size,
         });
+        logAction(session.name, "anexo_adicionado", leadId, {
+          categoria: it.categoria,
+          nome_arquivo: it.file.name,
+          tamanho: it.file.size,
+        });
       }
     }
   };
