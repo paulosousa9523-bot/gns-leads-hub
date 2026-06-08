@@ -77,18 +77,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
+      { title: "CRM - Grupo Nascimento & Souza" },
       { name: "description", content: "GNS Leads Hub is a WhatsApp CRM for legal professionals specializing in vehicle repossession defense." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
+      { property: "og:title", content: "CRM - Grupo Nascimento & Souza" },
       { property: "og:description", content: "GNS Leads Hub is a WhatsApp CRM for legal professionals specializing in vehicle repossession defense." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "Lovable App" },
+      { name: "twitter:title", content: "CRM - Grupo Nascimento & Souza" },
       { name: "twitter:description", content: "GNS Leads Hub is a WhatsApp CRM for legal professionals specializing in vehicle repossession defense." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/DaoXXLh8P7baBPftIBHJmi4TdLZ2/social-images/social-1780537249952-01d7fe16-26f4-4e8c-8550-a6cc01c38c28-1_all_9872.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/DaoXXLh8P7baBPftIBHJmi4TdLZ2/social-images/social-1780537249952-01d7fe16-26f4-4e8c-8550-a6cc01c38c28-1_all_9872.webp" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/DaoXXLh8P7baBPftIBHJmi4TdLZ2/social-images/social-1780939516004-WhatsApp_Image_2026-06-08_at_14.24.55.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/DaoXXLh8P7baBPftIBHJmi4TdLZ2/social-images/social-1780939516004-WhatsApp_Image_2026-06-08_at_14.24.55.webp" },
     ],
     links: [
       {
