@@ -127,6 +127,7 @@ export function NewLeadTab({ session }: { session: Session }) {
       setMsg("Erro: " + (error?.message || "falha ao salvar"));
       return;
     }
+    logAction(session.name, "lead_criado", data.id, { nome: form.nome, status: form.status, processo: form.processo || null });
     await uploadAll(data.id, [...procDocs, ...obsDocs]);
     setSaving(false);
     setMsg("Lead salvo!");
