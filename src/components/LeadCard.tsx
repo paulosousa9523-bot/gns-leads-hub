@@ -174,7 +174,7 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
         )}
       </div>
 
-      {edit && <EditModal lead={lead} onClose={() => setEdit(false)} />}
+      {edit && <EditModal lead={lead} session={session} onClose={() => setEdit(false)} />}
     </>
   );
 }
