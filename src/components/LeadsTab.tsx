@@ -4,6 +4,7 @@ import { STATUS_LABEL, STATUS_ORDER } from "@/lib/leads";
 import { LeadCard } from "./LeadCard";
 import type { Session } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
+import { logAction } from "@/lib/actionLog";
 
 export function LeadsTab({ leads, session }: { leads: Lead[]; session: Session }) {
   // Paulo Jurídico vê apenas as colunas de fechamento
