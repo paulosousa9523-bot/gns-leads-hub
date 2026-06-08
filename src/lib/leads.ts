@@ -155,9 +155,33 @@ export function timeAgo(iso: string): string {
   return remH > 0 ? `há ${days}d ${remH}h` : `há ${days}d`;
 }
 
-// Progresso 0..1 das 24h decorridas; >1 indica vencido
+// Soma apenas o tempo decorrido em dias úteis (seg–sex). Sáb/Dom não contam.
+export function businessMsSince(iso: string): number {
+  const start = new Date(iso);
+  const end = new Date();
+  if (end <= start) return 0;
+  let total = 0;
+  const cur = new Date(start);
+  while (cur < end) {
+    const day = cur.getDay(); // 0=dom, 6=sáb
+    const endOfDay = new Date(cur);
+    endOfDay.setHours(24, 0, 0, 0);
+    const segEnd = end < endOfDay ? end : endOfDay;
+    if (day !== 0 && day !== 6) {
+      total += segEnd.getTime() - cur.getTime();
+    }
+    cur.setTime(endOfDay.getTime());
+  }
+  return total;
+}
+
+export function businessHoursSince(iso: string): number {
+  return businessMsSince(iso) / ONE_HOUR;
+}
+
+// Progresso 0..1 das 24h ÚTEIS decorridas; >1 indica vencido
 export function dayProgress(iso: string): number {
-  return (Date.now() - new Date(iso).getTime()) / ONE_DAY;
+  return businessMsSince(iso) / ONE_DAY;
 }
 
 export function normalizePhoneForWa(phone: string): string {
