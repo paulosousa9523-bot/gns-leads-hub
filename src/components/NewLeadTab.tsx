@@ -10,6 +10,7 @@ import {
 } from "@/lib/leads";
 import type { Session } from "@/lib/auth";
 import { AlertTriangle, Paperclip, Trash2, Upload } from "lucide-react";
+import { logAction } from "@/lib/actionLog";
 
 type Pending = { file: File; categoria: string; id: string };
 
