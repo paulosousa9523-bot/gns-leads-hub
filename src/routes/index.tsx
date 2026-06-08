@@ -109,16 +109,20 @@ function App() {
         {tab === "new" && <NewLeadTab session={session} />}
         {tab === "roteiro" && <RoteiroTab />}
         {tab === "painel" && <PainelTab leads={leads} session={session} />}
+        {tab === "admin" && session.isManager && <AdminTab leads={leads} />}
       </main>
 
       <nav className="fixed bottom-0 inset-x-0 z-30 bg-surface/95 backdrop-blur border-t border-border">
-        <div className={`max-w-2xl mx-auto grid ${session.isLegal ? "grid-cols-1" : "grid-cols-4"}`}>
+        <div className={`max-w-2xl mx-auto grid ${session.isLegal ? "grid-cols-1" : session.isManager ? "grid-cols-5" : "grid-cols-4"}`}>
           <TabBtn active={tab === "leads"} onClick={() => setTab("leads")} icon={<Users className="w-5 h-5" />} label={session.isLegal ? "Contratos fechados" : "Leads"} />
           {!session.isLegal && <>
             <TabBtn active={tab === "new"} onClick={() => setTab("new")} icon={<Plus className="w-5 h-5" />} label="Nova" />
             <TabBtn active={tab === "roteiro"} onClick={() => setTab("roteiro")} icon={<MessageSquare className="w-5 h-5" />} label="Roteiro" />
             <TabBtn active={tab === "painel"} onClick={() => setTab("painel")} icon={<BarChart3 className="w-5 h-5" />} label="Painel" />
           </>}
+          {session.isManager && (
+            <TabBtn active={tab === "admin"} onClick={() => setTab("admin")} icon={<Shield className="w-5 h-5" />} label="Admin" />
+          )}
         </div>
       </nav>
     </div>
