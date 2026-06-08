@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      lead_actions: {
+        Row: {
+          acao: string
+          criado: string
+          detalhes: Json | null
+          id: string
+          lead_id: string | null
+          usuario: string
+        }
+        Insert: {
+          acao: string
+          criado?: string
+          detalhes?: Json | null
+          id?: string
+          lead_id?: string | null
+          usuario: string
+        }
+        Update: {
+          acao?: string
+          criado?: string
+          detalhes?: Json | null
+          id?: string
+          lead_id?: string | null
+          usuario?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_actions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_documents: {
         Row: {
           categoria: string
