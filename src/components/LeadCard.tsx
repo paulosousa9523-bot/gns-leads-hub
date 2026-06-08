@@ -31,12 +31,14 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
 
   const isDia = (DIA_COLUMNS as LeadStatus[]).includes(lead.status);
   const progress = isDia ? Math.min(1, dayProgress(lead.movido_em)) : 0;
-  const hrs = (Date.now() - new Date(lead.movido_em).getTime()) / 3_600_000;
+  const hrs = businessHoursSince(lead.movido_em);
   const progressColor = hrs >= 20 ? "bg-danger" : hrs >= 12 ? "bg-warning" : "bg-primary";
 
+  // Alerta de follow-up só no Dia 5
+  const alertFollowup = lead.status === "dia_5" && hrs >= 20;
   const borderColor =
     lead.status === "cliente_fechado" ? "border-l-primary"
-    : isDia && hrs >= 20 ? "border-l-danger"
+    : alertFollowup ? "border-l-danger"
     : "border-l-border";
 
   const phones = [lead.phone, lead.phone2, lead.phone3, lead.phone4, lead.phone5].filter(Boolean) as string[];
