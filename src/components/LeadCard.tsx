@@ -77,7 +77,7 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
         onDragStart={draggable ? onDragStart : undefined}
         className={`bg-surface border border-border border-l-4 ${borderColor} rounded-lg p-3 space-y-2 ${draggable ? "cursor-grab active:cursor-grabbing" : ""}`}
       >
-        <button onClick={() => setOpen(!open)} className="w-full text-left">
+        <button onClick={toggleOpen} className="w-full text-left">
           {lead.processo && (
             <div className="text-[10px] font-mono uppercase tracking-wider text-primary truncate">
               Proc. {lead.processo}
