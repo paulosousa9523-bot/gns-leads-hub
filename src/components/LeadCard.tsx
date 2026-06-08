@@ -179,7 +179,7 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
   );
 }
 
-function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
+function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; onClose: () => void }) {
   const [form, setForm] = useState({
     nome: lead.nome,
     cnpj: lead.cnpj || "",
@@ -201,6 +201,14 @@ function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
   const save = async () => {
     setSaving(true);
     const statusChanged = form.status !== lead.status;
+    const obsChanged = (form.obs || "") !== (lead.obs || "");
+    const changedFields: string[] = [];
+    const fields: (keyof typeof form)[] = ["nome","cnpj","cpf","phone","phone2","phone3","phone4","phone5","tipo_processo","tribunal","processo","valor_causa"];
+    for (const f of fields) {
+      const before = (lead as unknown as Record<string, unknown>)[f];
+      const after = form[f];
+      if ((before ?? "") !== (after ?? "")) changedFields.push(f);
+    }
     await supabase.from("leads").update({
       nome: form.nome,
       cnpj: form.cnpj || null,
@@ -218,6 +226,18 @@ function EditModal({ lead, onClose }: { lead: Lead; onClose: () => void }) {
       obs: form.obs || null,
       ...(statusChanged ? { movido_em: new Date().toISOString() } : {}),
     }).eq("id", lead.id);
+    if (changedFields.length) {
+      logAction(session.name, "edicao", lead.id, { campos: changedFields });
+    }
+    if (obsChanged) {
+      logAction(session.name, "observacao_alterada", lead.id);
+    }
+    if (statusChanged) {
+      logAction(session.name, "status_alterado", lead.id, { de: lead.status, para: form.status });
+      if (form.status === "cliente_fechado") {
+        logAction(session.name, "lead_fechado", lead.id);
+      }
+    }
     setSaving(false);
     onClose();
   };
