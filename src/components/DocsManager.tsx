@@ -41,6 +41,7 @@ export function DocsManager({ leadId, categories, filterCategories, title }: Pro
   const upload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
+    const usuario = getSession()?.name;
     setUploading(true);
     for (const file of files) {
       const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -55,6 +56,7 @@ export function DocsManager({ leadId, categories, filterCategories, title }: Pro
           mime_type: file.type || null,
           tamanho: file.size,
         });
+        logAction(usuario, "anexo_adicionado", leadId, { categoria, nome_arquivo: file.name, tamanho: file.size });
       }
     }
     setUploading(false);
@@ -71,6 +73,7 @@ export function DocsManager({ leadId, categories, filterCategories, title }: Pro
     if (!confirm(`Remover ${d.nome_arquivo}?`)) return;
     await supabase.storage.from(BUCKET).remove([d.storage_path]);
     await supabase.from("lead_documents").delete().eq("id", d.id);
+    logAction(getSession()?.name, "anexo_removido", leadId, { categoria: d.categoria, nome_arquivo: d.nome_arquivo });
     load();
   };
 
