@@ -16,6 +16,7 @@ import type { Session } from "@/lib/auth";
 import { MessageCircle, Pencil, X, Download } from "lucide-react";
 import { DocsManager } from "./DocsManager";
 import { PROCESS_DOC_CATEGORIES, OBS_DOC_CATEGORIES } from "@/lib/leads";
+import { logAction } from "@/lib/actionLog";
 
 interface Props {
   lead: Lead;
