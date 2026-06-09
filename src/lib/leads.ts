@@ -77,7 +77,7 @@ export interface Lead {
   followup: string | null;
   movido_em: string;
   criado: string;
-  chamado?: boolean | null;
+  chamado?: boolean;
 }
 
 export const STATUS_ORDER: LeadStatus[] = [
