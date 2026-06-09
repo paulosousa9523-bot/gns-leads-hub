@@ -14,7 +14,7 @@ export const VENDEDORES = [
   "Matheus Fiaux",
   "Vitor Benício",
   "Josiane Cardoso",
-  "Rafael Chagas",
+  "Raphael Chagas",
   "Vitor Damasceno",
   "Paulo Sousa",
   "Hosanna Pinheiro",
@@ -27,7 +27,7 @@ export const HOSANNA_VENDEDORES = [
   "Vitor Damasceno",
   "Matheus Fiaux",
   "Josiane Cardoso",
-  "Rafael Chagas",
+  "Raphael Chagas",
   "Augusto Santos",
   "Vitor Benício",
   "Hosanna Pinheiro",
@@ -37,6 +37,7 @@ const STAFF_EMAILS: Record<string, string> = {
   [GESTOR_NAME]: "paulo.gestor@gns-leads.app",
   [JURIDICO_NAME]: "paulo.juridico@gns-leads.app",
   [HOSANNA_NAME]: "hosanna.admin@gns-leads.app",
+  "Raphael Chagas": "rafael.chagas@gns-leads.app",
 };
 
 export const ALL_LOGIN_NAMES = [...VENDEDORES, GESTOR_NAME, JURIDICO_NAME, HOSANNA_NAME];
