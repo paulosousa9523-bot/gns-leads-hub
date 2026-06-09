@@ -18,6 +18,8 @@ import { MessageCircle, Pencil, X, Download, Phone, PhoneOff } from "lucide-reac
 import { DocsManager } from "./DocsManager";
 import { PROCESS_DOC_CATEGORIES, OBS_DOC_CATEGORIES } from "@/lib/leads";
 import { logAction } from "@/lib/actionLog";
+import { useServerFn } from "@tanstack/react-start";
+import { startCall } from "@/lib/calls.functions";
 
 interface Props {
   lead: Lead;
@@ -31,6 +33,8 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState(false);
   const [chamado, setChamado] = useState<boolean>(!!lead.chamado);
+  const [calling, setCalling] = useState(false);
+  const startCallFn = useServerFn(startCall);
 
   const isDia = (DIA_COLUMNS as LeadStatus[]).includes(lead.status);
   const progress = isDia ? Math.min(1, dayProgress(lead.movido_em)) : 0;
@@ -72,6 +76,26 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
     const next = !open;
     setOpen(next);
     if (next) logAction(session.name, "lead_aberto", lead.id);
+  };
+
+  const handleCall = async (e: React.MouseEvent, telefone: string) => {
+    e.stopPropagation();
+    if (calling) return;
+    setCalling(true);
+    try {
+      const res = await startCallFn({ data: { leadId: lead.id, telefone } });
+      const link = res?.telLink ?? `tel:${telefone.replace(/[^\d+]/g, "")}`;
+      window.location.href = link;
+      if (!chamado) {
+        setChamado(true);
+        await supabase.from("leads").update({ chamado: true } as never).eq("id", lead.id);
+      }
+    } catch (err) {
+      console.error("startCall falhou", err);
+      window.location.href = `tel:${telefone.replace(/[^\d+]/g, "")}`;
+    } finally {
+      setCalling(false);
+    }
   };
 
   const onDragStart = (e: React.DragEvent) => {
@@ -131,16 +155,25 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
           </div>
         )}
 
-        <button
-          onClick={toggleChamado}
-          className={`w-full inline-flex items-center justify-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md transition ${
-            chamado
-              ? "bg-called-foreground/15 text-called-foreground border border-called-foreground/30 hover:bg-called-foreground/25"
-              : "bg-primary text-primary-foreground hover:opacity-90"
-          }`}
-        >
-          {chamado ? <><PhoneOff className="w-3.5 h-3.5" /> Chamado</> : <><Phone className="w-3.5 h-3.5" /> Não chamado</>}
-        </button>
+        <div className="grid grid-cols-2 gap-1.5">
+          <button
+            onClick={(e) => handleCall(e, lead.phone)}
+            disabled={calling}
+            className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50"
+          >
+            <Phone className="w-3.5 h-3.5" /> {calling ? "Ligando..." : "Ligar"}
+          </button>
+          <button
+            onClick={toggleChamado}
+            className={`inline-flex items-center justify-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md transition ${
+              chamado
+                ? "bg-called-foreground/15 text-called-foreground border border-called-foreground/30 hover:bg-called-foreground/25"
+                : "bg-muted border border-border hover:border-primary"
+            }`}
+          >
+            {chamado ? <><PhoneOff className="w-3.5 h-3.5" /> Chamado</> : <><Phone className="w-3.5 h-3.5" /> Marcar chamado</>}
+          </button>
+        </div>
 
         {showPullButton && (
           <button
@@ -164,11 +197,16 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
                 <div className={`text-[10px] uppercase tracking-wider ${chamado ? "text-called-foreground/70" : "text-muted-foreground"}`}>Telefones</div>
                 <div className="space-y-1">
                   {phones.map((p, i) => (
-                    <div key={i} className="flex items-center justify-between text-xs">
-                      <span>{p}</span>
-                      <button onClick={() => openWa(p)} className="text-primary inline-flex items-center gap-1">
-                        <MessageCircle className="w-3 h-3" /> WA
-                      </button>
+                    <div key={i} className="flex items-center justify-between text-xs gap-2">
+                      <span className="truncate">{p}</span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button onClick={(e) => handleCall(e, p)} disabled={calling} className="text-primary inline-flex items-center gap-1 disabled:opacity-50">
+                          <Phone className="w-3 h-3" /> Ligar
+                        </button>
+                        <button onClick={() => openWa(p)} className="text-primary inline-flex items-center gap-1">
+                          <MessageCircle className="w-3 h-3" /> WA
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
