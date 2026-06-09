@@ -9,14 +9,14 @@ const BUCKET = "lead-docs";
 
 interface Props {
   leadId: string;
-  /** Categorias selecionáveis no dropdown (default: todas) */
   categories?: readonly string[];
-  /** Filtrar lista exibida apenas para essas categorias (default: as do dropdown) */
   filterCategories?: readonly string[];
   title?: string;
+  /** Quando true, exibe somente o upload (sem listar os arquivos). */
+  hideList?: boolean;
 }
 
-export function DocsManager({ leadId, categories, filterCategories, title }: Props) {
+export function DocsManager({ leadId, categories, filterCategories, title, hideList }: Props) {
   const cats = categories && categories.length ? categories : DOC_CATEGORIES;
   const filter = filterCategories ?? cats;
   const [docs, setDocs] = useState<LeadDocument[]>([]);
@@ -85,7 +85,7 @@ export function DocsManager({ leadId, categories, filterCategories, title }: Pro
       <div className="flex items-center gap-2">
         <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
         <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-          {title || "Documentos"} ({docs.length})
+          {title || "Documentos"}{hideList ? "" : ` (${docs.length})`}
         </span>
       </div>
       <div className="flex gap-2">
@@ -102,7 +102,7 @@ export function DocsManager({ leadId, categories, filterCategories, title }: Pro
           <input type="file" multiple className="hidden" onChange={upload} disabled={uploading} />
         </label>
       </div>
-      {docs.length > 0 && (
+      {!hideList && docs.length > 0 && (
         <ul className="space-y-1 max-h-48 overflow-y-auto">
           {docs.map((d) => (
             <li key={d.id} className="flex items-center justify-between gap-2 bg-muted/40 border border-border rounded-md px-2 py-1.5">
