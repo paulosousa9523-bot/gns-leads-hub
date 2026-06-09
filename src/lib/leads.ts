@@ -7,7 +7,8 @@ export type LeadStatus =
   | "dia_5"
   | "negociacao"
   | "contrato"
-  | "cliente_fechado";
+  | "cliente_fechado"
+  | "cliente_digitado";
 
 export const TIPO_PROCESSO_OPTIONS = [
   "Busca e apreensão",
@@ -26,8 +27,8 @@ export const PROCESS_DOC_CATEGORIES = [
   "004 COMPROVANTE DE RESIDÊNCIA",
   "005 TRÊS ÚLTIMOS EXTRATOS BANCÁRIOS OU CONTRACHEQUES",
   "006 DOCUMENTOS COMPROBATÓRIOS",
-  "007 CTPS",
-  "008 IRPJ",
+  "006 CTPS",
+  "007 IRPJ",
 ] as const;
 
 // Categorias permitidas dentro da área de Observações
@@ -76,9 +77,9 @@ export interface Lead {
   followup: string | null;
   movido_em: string;
   criado: string;
+  chamado?: boolean | null;
 }
 
-// Ordem das colunas do kanban (Funil Geral primeiro)
 export const STATUS_ORDER: LeadStatus[] = [
   "funil",
   "dia_1",
@@ -89,6 +90,7 @@ export const STATUS_ORDER: LeadStatus[] = [
   "negociacao",
   "contrato",
   "cliente_fechado",
+  "cliente_digitado",
 ];
 
 export const STATUS_LABEL: Record<LeadStatus, string> = {
@@ -101,6 +103,7 @@ export const STATUS_LABEL: Record<LeadStatus, string> = {
   negociacao: "Em Negociação",
   contrato: "Contrato Assinado",
   cliente_fechado: "Cliente Fechado",
+  cliente_digitado: "Cliente Digitado",
 };
 
 export const STATUS_STYLE: Record<LeadStatus, string> = {
@@ -113,13 +116,12 @@ export const STATUS_STYLE: Record<LeadStatus, string> = {
   negociacao: "bg-purple/15 text-purple border-purple/30",
   contrato: "bg-primary/25 text-primary border-primary/50",
   cliente_fechado: "bg-primary/30 text-primary border-primary/60",
+  cliente_digitado: "bg-info/20 text-info border-info/40",
 };
 
 // Colunas de esteira pessoal (Dia 1 a Dia 5)
 export const DIA_COLUMNS: LeadStatus[] = ["dia_1", "dia_2", "dia_3", "dia_4", "dia_5"];
 
-// Próxima coluna para a progressão automática.
-// Dia 5 -> Funil Geral. Funil Geral em diante para.
 export function nextAutoStatus(s: LeadStatus): LeadStatus | null {
   const map: Partial<Record<LeadStatus, LeadStatus>> = {
     dia_1: "dia_2",
@@ -142,7 +144,6 @@ export function hoursSince(iso: string): number {
   return (Date.now() - new Date(iso).getTime()) / ONE_HOUR;
 }
 
-// "há 6h", "há 1d 4h", "agora"
 export function timeAgo(iso: string): string {
   const ms = Date.now() - new Date(iso).getTime();
   if (ms < 60_000) return "agora";
@@ -155,7 +156,6 @@ export function timeAgo(iso: string): string {
   return remH > 0 ? `há ${days}d ${remH}h` : `há ${days}d`;
 }
 
-// Soma apenas o tempo decorrido em dias úteis (seg–sex). Sáb/Dom não contam.
 export function businessMsSince(iso: string): number {
   const start = new Date(iso);
   const end = new Date();
@@ -163,7 +163,7 @@ export function businessMsSince(iso: string): number {
   let total = 0;
   const cur = new Date(start);
   while (cur < end) {
-    const day = cur.getDay(); // 0=dom, 6=sáb
+    const day = cur.getDay();
     const endOfDay = new Date(cur);
     endOfDay.setHours(24, 0, 0, 0);
     const segEnd = end < endOfDay ? end : endOfDay;
@@ -179,7 +179,6 @@ export function businessHoursSince(iso: string): number {
   return businessMsSince(iso) / ONE_HOUR;
 }
 
-// Progresso 0..1 das 24h ÚTEIS decorridas; >1 indica vencido
 export function dayProgress(iso: string): number {
   return businessMsSince(iso) / ONE_DAY;
 }
@@ -190,12 +189,27 @@ export function normalizePhoneForWa(phone: string): string {
   return "55" + digits;
 }
 
-// Mantido para compatibilidade com o cálculo opcional de follow-up.
+/** Aplica máscara CNJ: 0000000-00.0000.0.00.0000 */
+export function formatProcesso(input: string): string {
+  const d = (input || "").replace(/\D/g, "").slice(0, 20);
+  if (!d) return "";
+  let out = d.slice(0, 7);
+  if (d.length > 7) out += "-" + d.slice(7, 9);
+  if (d.length > 9) out += "." + d.slice(9, 13);
+  if (d.length > 13) out += "." + d.slice(13, 14);
+  if (d.length > 14) out += "." + d.slice(14, 16);
+  if (d.length > 16) out += "." + d.slice(16, 20);
+  return out;
+}
+
+export function digitsOnly(s: string | null | undefined): string {
+  return (s || "").replace(/\D/g, "");
+}
+
 export function computeFollowup(_status: LeadStatus): string | null {
   return null;
 }
 
-// Mantido para compatibilidade. Não usado pelo Kanban.
 export function followupState(_followup: string | null, _status: LeadStatus): "none" | "today" | "late" {
   return "none";
 }
