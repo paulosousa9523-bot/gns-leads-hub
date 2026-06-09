@@ -78,6 +78,26 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
     if (next) logAction(session.name, "lead_aberto", lead.id);
   };
 
+  const handleCall = async (e: React.MouseEvent, telefone: string) => {
+    e.stopPropagation();
+    if (calling) return;
+    setCalling(true);
+    try {
+      const res = await startCallFn({ data: { leadId: lead.id, telefone } });
+      const link = res?.telLink ?? `tel:${telefone.replace(/[^\d+]/g, "")}`;
+      window.location.href = link;
+      if (!chamado) {
+        setChamado(true);
+        await supabase.from("leads").update({ chamado: true } as never).eq("id", lead.id);
+      }
+    } catch (err) {
+      console.error("startCall falhou", err);
+      window.location.href = `tel:${telefone.replace(/[^\d+]/g, "")}`;
+    } finally {
+      setCalling(false);
+    }
+  };
+
   const onDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData("text/plain", lead.id);
     e.dataTransfer.effectAllowed = "move";
