@@ -155,16 +155,25 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
           </div>
         )}
 
-        <button
-          onClick={toggleChamado}
-          className={`w-full inline-flex items-center justify-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md transition ${
-            chamado
-              ? "bg-called-foreground/15 text-called-foreground border border-called-foreground/30 hover:bg-called-foreground/25"
-              : "bg-primary text-primary-foreground hover:opacity-90"
-          }`}
-        >
-          {chamado ? <><PhoneOff className="w-3.5 h-3.5" /> Chamado</> : <><Phone className="w-3.5 h-3.5" /> Não chamado</>}
-        </button>
+        <div className="grid grid-cols-2 gap-1.5">
+          <button
+            onClick={(e) => handleCall(e, lead.phone)}
+            disabled={calling}
+            className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50"
+          >
+            <Phone className="w-3.5 h-3.5" /> {calling ? "Ligando..." : "Ligar"}
+          </button>
+          <button
+            onClick={toggleChamado}
+            className={`inline-flex items-center justify-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md transition ${
+              chamado
+                ? "bg-called-foreground/15 text-called-foreground border border-called-foreground/30 hover:bg-called-foreground/25"
+                : "bg-muted border border-border hover:border-primary"
+            }`}
+          >
+            {chamado ? <><PhoneOff className="w-3.5 h-3.5" /> Chamado</> : <><Phone className="w-3.5 h-3.5" /> Marcar chamado</>}
+          </button>
+        </div>
 
         {showPullButton && (
           <button
