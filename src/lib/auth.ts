@@ -27,7 +27,7 @@ export const HOSANNA_VENDEDORES = [
   "Vitor Damasceno",
   "Matheus Fiaux",
   "Josiane Cardoso",
-  "Rafael Chagas",
+  "Raphael Chagas",
   "Augusto Santos",
   "Vitor Benício",
   "Hosanna Pinheiro",
