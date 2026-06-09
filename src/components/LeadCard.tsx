@@ -18,6 +18,8 @@ import { MessageCircle, Pencil, X, Download, Phone, PhoneOff } from "lucide-reac
 import { DocsManager } from "./DocsManager";
 import { PROCESS_DOC_CATEGORIES, OBS_DOC_CATEGORIES } from "@/lib/leads";
 import { logAction } from "@/lib/actionLog";
+import { useServerFn } from "@tanstack/react-start";
+import { startCall } from "@/lib/calls.functions";
 
 interface Props {
   lead: Lead;
