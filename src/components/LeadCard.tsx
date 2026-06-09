@@ -33,6 +33,8 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState(false);
   const [chamado, setChamado] = useState<boolean>(!!lead.chamado);
+  const [calling, setCalling] = useState(false);
+  const startCallFn = useServerFn(startCall);
 
   const isDia = (DIA_COLUMNS as LeadStatus[]).includes(lead.status);
   const progress = isDia ? Math.min(1, dayProgress(lead.movido_em)) : 0;
