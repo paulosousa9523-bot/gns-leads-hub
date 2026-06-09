@@ -197,11 +197,16 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
                 <div className={`text-[10px] uppercase tracking-wider ${chamado ? "text-called-foreground/70" : "text-muted-foreground"}`}>Telefones</div>
                 <div className="space-y-1">
                   {phones.map((p, i) => (
-                    <div key={i} className="flex items-center justify-between text-xs">
-                      <span>{p}</span>
-                      <button onClick={() => openWa(p)} className="text-primary inline-flex items-center gap-1">
-                        <MessageCircle className="w-3 h-3" /> WA
-                      </button>
+                    <div key={i} className="flex items-center justify-between text-xs gap-2">
+                      <span className="truncate">{p}</span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button onClick={(e) => handleCall(e, p)} disabled={calling} className="text-primary inline-flex items-center gap-1 disabled:opacity-50">
+                          <Phone className="w-3 h-3" /> Ligar
+                        </button>
+                        <button onClick={() => openWa(p)} className="text-primary inline-flex items-center gap-1">
+                          <MessageCircle className="w-3 h-3" /> WA
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
