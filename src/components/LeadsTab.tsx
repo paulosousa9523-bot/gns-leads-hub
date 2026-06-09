@@ -1,34 +1,58 @@
 import { useMemo, useState } from "react";
 import type { Lead, LeadStatus } from "@/lib/leads";
-import { STATUS_LABEL, STATUS_ORDER } from "@/lib/leads";
+import { STATUS_LABEL, STATUS_ORDER, digitsOnly } from "@/lib/leads";
 import { LeadCard } from "./LeadCard";
 import type { Session } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { logAction } from "@/lib/actionLog";
+import { Search } from "lucide-react";
 
 export function LeadsTab({ leads, session }: { leads: Lead[]; session: Session }) {
-  // Paulo Jurídico vê apenas as colunas de fechamento
+  // Jurídico: contratos fechados + clientes digitados
+  // Hosanna (admin restrito): todas as colunas mas só dos vendedores permitidos
   const COLUMNS: LeadStatus[] = session.isLegal
-    ? (["contrato", "cliente_fechado"] as LeadStatus[])
-    : STATUS_ORDER;
+    ? (["contrato", "cliente_fechado", "cliente_digitado"] as LeadStatus[])
+    : STATUS_ORDER.filter((s) => s !== "cliente_digitado");
 
-  const [activeCol, setActiveCol] = useState<LeadStatus>(COLUMNS[0]);
+  const [query, setQuery] = useState("");
 
-  // Colunas em que TODOS os vendedores enxergam todos os leads
-  const SHARED_COLS: LeadStatus[] = ["funil", "negociacao", "contrato", "cliente_fechado"];
+  // Vendedor vê próprios; gestor/jurídico/Hosanna vê todos (Hosanna filtrado por restrictedVendors)
+  // EXCEÇÃO: contrato/cliente_fechado/cliente_digitado: vendedor só vê os seus
+  const filteredByOwnership = useMemo(() => {
+    let base = leads;
+    if (session.restrictedVendors) {
+      base = base.filter((l) => session.restrictedVendors!.includes(l.vendedor));
+    }
+    if (!session.isManager && !session.isLegal) {
+      // Vendedor: tudo é próprio (inclusive negociação/contrato/fechado/digitado) — EXCETO Funil Geral que é compartilhado
+      base = base.filter((l) => l.status === "funil" || l.vendedor === session.name);
+    }
+    return base;
+  }, [leads, session]);
+
+  const searched = useMemo(() => {
+    const q = query.trim();
+    if (!q) return filteredByOwnership;
+    const qDigits = digitsOnly(q);
+    const qLower = q.toLowerCase();
+    return filteredByOwnership.filter((l) => {
+      if (qDigits) {
+        const phones = [l.phone, l.phone2, l.phone3, l.phone4, l.phone5].filter(Boolean) as string[];
+        if (phones.some((p) => digitsOnly(p).includes(qDigits))) return true;
+        if (digitsOnly(l.processo).includes(qDigits)) return true;
+        if (digitsOnly(l.cpf).includes(qDigits)) return true;
+        if (digitsOnly(l.cnpj).includes(qDigits)) return true;
+      }
+      if ((l.nome || "").toLowerCase().includes(qLower)) return true;
+      return false;
+    });
+  }, [filteredByOwnership, query]);
 
   const visibleByCol = useMemo(() => {
     const map = {} as Record<LeadStatus, Lead[]>;
-    for (const s of COLUMNS) {
-      const inCol = leads.filter((l) => l.status === s);
-      if (SHARED_COLS.includes(s) || session.isManager) {
-        map[s] = inCol;
-      } else {
-        map[s] = inCol.filter((l) => l.vendedor === session.name);
-      }
-    }
+    for (const s of COLUMNS) map[s] = searched.filter((l) => l.status === s);
     return map;
-  }, [leads, session, COLUMNS]);
+  }, [searched, COLUMNS]);
 
   const onDrop = async (e: React.DragEvent, col: LeadStatus) => {
     e.preventDefault();
@@ -36,10 +60,10 @@ export function LeadsTab({ leads, session }: { leads: Lead[]; session: Session }
     if (!id) return;
     const lead = leads.find((l) => l.id === id);
     if (!lead || lead.status === col) return;
-    const patch: Partial<Lead> = { status: col, movido_em: new Date().toISOString() };
+    const patch: Record<string, unknown> = { status: col, movido_em: new Date().toISOString() };
     const pulled = lead.status === "funil" && col !== "funil" && !session.isManager;
     if (pulled) patch.vendedor = session.name;
-    await supabase.from("leads").update(patch).eq("id", lead.id);
+    await supabase.from("leads").update(patch as never).eq("id", lead.id);
     logAction(session.name, "status_alterado", lead.id, { de: lead.status, para: col });
     if (col === "cliente_fechado") logAction(session.name, "lead_fechado", lead.id);
     if (pulled) logAction(session.name, "lead_puxado", lead.id, { de_vendedor: lead.vendedor });
@@ -48,54 +72,38 @@ export function LeadsTab({ leads, session }: { leads: Lead[]; session: Session }
   const allowDrop = (e: React.DragEvent) => e.preventDefault();
 
   return (
-    <div className="space-y-3 max-w-[1600px] mx-auto">
-      <div className="flex items-center justify-between">
+    <div className="space-y-3 max-w-[1800px] mx-auto">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-xl font-bold">Esteira</h2>
-        <div className="text-xs text-muted-foreground">{leads.length} leads</div>
-      </div>
-
-      {/* Chips mobile para escolher coluna */}
-      <div className="lg:hidden flex gap-1.5 overflow-x-auto -mx-4 px-4 pb-1">
-        {COLUMNS.map((s) => {
-          const n = visibleByCol[s].length;
-          return (
-            <button
-              key={s}
-              onClick={() => setActiveCol(s)}
-              className={`shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border transition ${
-                activeCol === s ? "bg-primary text-primary-foreground border-primary" : "bg-surface text-muted-foreground border-border"
-              }`}
-            >
-              {STATUS_LABEL[s]} <span className="opacity-70">({n})</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Mobile: 1 coluna ativa */}
-      <div className="lg:hidden">
-        <Column
-          col={activeCol}
-          leads={visibleByCol[activeCol]}
-          session={session}
-          onDrop={onDrop}
-          allowDrop={allowDrop}
-        />
-      </div>
-
-      {/* Desktop: kanban horizontal */}
-      <div className="hidden lg:flex gap-3 overflow-x-auto pb-3">
-        {COLUMNS.map((s) => (
-          <div key={s} className="shrink-0 w-72">
-            <Column
-              col={s}
-              leads={visibleByCol[s]}
-              session={session}
-              onDrop={onDrop}
-              allowDrop={allowDrop}
+        <div className="flex items-center gap-2 flex-1 sm:flex-initial sm:min-w-[280px]">
+          <div className="relative flex-1">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar por telefone, processo, CPF, nome..."
+              className="w-full bg-muted border border-border rounded-md pl-7 pr-2.5 py-1.5 text-xs focus:outline-none focus:border-primary"
             />
           </div>
-        ))}
+          <div className="text-xs text-muted-foreground whitespace-nowrap">{searched.length} leads</div>
+        </div>
+      </div>
+
+      {/* Kanban com rolagem horizontal sempre visível */}
+      <div className="kanban-scroll pb-3">
+        <div className="flex gap-3 min-w-max">
+          {COLUMNS.map((s) => (
+            <div key={s} className="shrink-0 w-72">
+              <Column
+                col={s}
+                leads={visibleByCol[s]}
+                session={session}
+                onDrop={onDrop}
+                allowDrop={allowDrop}
+              />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -115,7 +123,7 @@ function Column({
   allowDrop: (e: React.DragEvent) => void;
 }) {
   const isFunil = col === "funil";
-  const isShared = ["funil", "negociacao", "contrato", "cliente_fechado"].includes(col);
+  const showVendedor = session.isManager || session.isLegal || isFunil;
   return (
     <div
       onDragOver={allowDrop}
@@ -134,13 +142,13 @@ function Column({
         )}
         {leads.map((l) => {
           const isOwn = l.vendedor === session.name;
-          const showPull = isFunil && !session.isManager && !isOwn;
+          const showPull = isFunil && !session.isManager && !session.isLegal && !isOwn;
           return (
             <LeadCard
               key={l.id}
               lead={l}
               session={session}
-              showVendedor={isShared || session.isManager}
+              showVendedor={showVendedor}
               showPullButton={showPull}
               draggable={session.isManager || isOwn}
             />

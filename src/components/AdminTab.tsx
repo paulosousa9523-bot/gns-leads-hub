@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ACTION_LABEL, type ActionType } from "@/lib/actionLog";
-import { VENDEDORES } from "@/lib/auth";
+import { VENDEDORES, type Session } from "@/lib/auth";
 import type { Lead } from "@/lib/leads";
+import { Key, Save, Trash2 } from "lucide-react";
 
 interface ActionRow {
   id: string;
@@ -13,11 +14,21 @@ interface ActionRow {
   criado: string;
 }
 
-export function AdminTab({ leads }: { leads: Lead[] }) {
+interface SenhaRow {
+  vendedor: string;
+  senha: string;
+}
+
+export function AdminTab({ leads, session }: { leads: Lead[]; session: Session }) {
+  const allowedVendors = session.restrictedVendors ?? VENDEDORES;
+
   const [rows, setRows] = useState<ActionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterVend, setFilterVend] = useState<string>("");
   const [filterLead, setFilterLead] = useState<string>("");
+  const [senhas, setSenhas] = useState<Record<string, string>>({});
+  const [draft, setDraft] = useState<Record<string, string>>({});
+  const [msg, setMsg] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -42,18 +53,51 @@ export function AdminTab({ leads }: { leads: Lead[] }) {
     return () => { cancelled = true; supabase.removeChannel(ch); };
   }, []);
 
+  const loadSenhas = async () => {
+    const { data } = await supabase.from("vendedor_senhas" as never).select("vendedor, senha");
+    const map: Record<string, string> = {};
+    ((data as unknown as SenhaRow[]) || []).forEach((r) => { map[r.vendedor] = r.senha; });
+    setSenhas(map);
+  };
+  useEffect(() => { loadSenhas(); }, []);
+
+  const saveSenha = async (vendedor: string) => {
+    const senha = (draft[vendedor] || "").trim();
+    if (!senha) return;
+    await supabase.from("vendedor_senhas" as never).upsert({ vendedor, senha, atualizado: new Date().toISOString() } as never);
+    setMsg(`Senha de ${vendedor} salva.`);
+    setDraft((d) => ({ ...d, [vendedor]: "" }));
+    loadSenhas();
+    setTimeout(() => setMsg(""), 2500);
+  };
+
+  const removeSenha = async (vendedor: string) => {
+    if (!confirm(`Remover senha de ${vendedor}? Ele poderá entrar sem senha.`)) return;
+    await supabase.from("vendedor_senhas" as never).delete().eq("vendedor", vendedor);
+    loadSenhas();
+  };
+
   const leadMap = useMemo(() => {
     const m = new Map<string, Lead>();
     leads.forEach((l) => m.set(l.id, l));
     return m;
   }, [leads]);
 
+  const visibleLeads = useMemo(
+    () => (session.restrictedVendors ? leads.filter((l) => session.restrictedVendors!.includes(l.vendedor)) : leads),
+    [leads, session.restrictedVendors],
+  );
+
+  const visibleRows = useMemo(
+    () => (session.restrictedVendors ? rows.filter((r) => session.restrictedVendors!.includes(r.usuario)) : rows),
+    [rows, session.restrictedVendors],
+  );
+
   const stats = useMemo(() => {
-    // Leads trabalhados por vendedor (qualquer ação interna no lead)
     const trabalhadosByVend = new Map<string, Set<string>>();
     const lastByVend = new Map<string, string>();
     const interactedLeadIds = new Set<string>();
-    for (const r of rows) {
+    for (const r of visibleRows) {
       if (!lastByVend.has(r.usuario)) lastByVend.set(r.usuario, r.criado);
       if (r.lead_id) {
         interactedLeadIds.add(r.lead_id);
@@ -61,18 +105,18 @@ export function AdminTab({ leads }: { leads: Lead[] }) {
         trabalhadosByVend.get(r.usuario)!.add(r.lead_id);
       }
     }
-    const semInteracao = leads.filter((l) => !interactedLeadIds.has(l.id)).length;
-    const vendedores = VENDEDORES.map((v) => ({
+    const semInteracao = visibleLeads.filter((l) => !interactedLeadIds.has(l.id)).length;
+    const vendedores = allowedVendors.map((v) => ({
       nome: v,
       leads: trabalhadosByVend.get(v)?.size || 0,
       ultima: lastByVend.get(v) || null,
-      acoes: rows.filter((r) => r.usuario === v).length,
+      acoes: visibleRows.filter((r) => r.usuario === v).length,
     })).sort((a, b) => b.leads - a.leads);
     return { vendedores, semInteracao };
-  }, [rows, leads]);
+  }, [visibleRows, visibleLeads, allowedVendors]);
 
   const filtered = useMemo(() => {
-    return rows.filter((r) => {
+    return visibleRows.filter((r) => {
       if (filterVend && r.usuario !== filterVend) return false;
       if (filterLead) {
         const ld = r.lead_id ? leadMap.get(r.lead_id) : null;
@@ -82,7 +126,7 @@ export function AdminTab({ leads }: { leads: Lead[] }) {
       }
       return true;
     });
-  }, [rows, filterVend, filterLead, leadMap]);
+  }, [visibleRows, filterVend, filterLead, leadMap]);
 
   const fmt = (iso: string) =>
     new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
@@ -91,12 +135,14 @@ export function AdminTab({ leads }: { leads: Lead[] }) {
     <div className="space-y-4 max-w-5xl mx-auto">
       <div>
         <h2 className="text-xl font-bold">Administração — Auditoria</h2>
-        <p className="text-xs text-muted-foreground">Visível apenas para administradores. Vendedores não enxergam estes dados.</p>
+        <p className="text-xs text-muted-foreground">
+          {session.restrictedVendors ? "Acesso restrito aos vendedores designados." : "Visível apenas para administradores."}
+        </p>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         <Card label="Leads sem interação" value={String(stats.semInteracao)} />
-        <Card label="Ações registradas" value={String(rows.length)} />
+        <Card label="Ações registradas" value={String(visibleRows.length)} />
         <Card label="Vendedores ativos" value={String(stats.vendedores.filter((v) => v.acoes > 0).length)} />
       </div>
 
@@ -126,12 +172,63 @@ export function AdminTab({ leads }: { leads: Lead[] }) {
         </div>
       </section>
 
+      {!session.restrictedVendors && (
+        <section className="bg-surface border border-border rounded-xl overflow-hidden">
+          <div className="px-3 py-2 border-b border-border flex items-center gap-2">
+            <Key className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs font-bold uppercase tracking-wider">Senhas dos vendedores</span>
+            {msg && <span className="text-[11px] text-primary ml-auto">{msg}</span>}
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="bg-muted/40">
+                <tr>
+                  <th className="text-left p-2">Vendedor</th>
+                  <th className="text-left p-2">Status</th>
+                  <th className="text-left p-2">Nova senha</th>
+                  <th className="text-right p-2">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {VENDEDORES.map((v) => (
+                  <tr key={v} className="border-t border-border">
+                    <td className="p-2 font-medium">{v}</td>
+                    <td className="p-2 text-muted-foreground">
+                      {senhas[v] ? <span className="text-primary">Definida</span> : <span>Sem senha</span>}
+                    </td>
+                    <td className="p-2">
+                      <input
+                        type="text"
+                        placeholder="••••••"
+                        value={draft[v] || ""}
+                        onChange={(e) => setDraft((d) => ({ ...d, [v]: e.target.value }))}
+                        className="bg-muted border border-border rounded-md px-2 py-1 text-xs w-full max-w-[160px]"
+                      />
+                    </td>
+                    <td className="p-2 text-right space-x-1 whitespace-nowrap">
+                      <button onClick={() => saveSenha(v)} className="inline-flex items-center gap-1 bg-primary text-primary-foreground px-2 py-1 rounded-md text-[11px] font-semibold">
+                        <Save className="w-3 h-3" /> Salvar
+                      </button>
+                      {senhas[v] && (
+                        <button onClick={() => removeSenha(v)} className="inline-flex items-center gap-1 bg-muted border border-border px-2 py-1 rounded-md text-[11px]">
+                          <Trash2 className="w-3 h-3" /> Limpar
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
       <section className="bg-surface border border-border rounded-xl">
         <div className="px-3 py-2 border-b border-border flex flex-wrap items-center gap-2">
           <span className="text-xs font-bold uppercase tracking-wider mr-auto">Histórico de ações</span>
           <select className="bg-muted border border-border rounded-md px-2 py-1 text-xs" value={filterVend} onChange={(e) => setFilterVend(e.target.value)}>
             <option value="">Todos vendedores</option>
-            {VENDEDORES.map((v) => <option key={v} value={v}>{v}</option>)}
+            {allowedVendors.map((v) => <option key={v} value={v}>{v}</option>)}
           </select>
           <input className="bg-muted border border-border rounded-md px-2 py-1 text-xs" placeholder="Filtrar por lead / processo" value={filterLead} onChange={(e) => setFilterLead(e.target.value)} />
         </div>

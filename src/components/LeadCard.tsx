@@ -10,10 +10,11 @@ import {
   timeAgo,
   dayProgress,
   businessHoursSince,
+  formatProcesso,
 } from "@/lib/leads";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@/lib/auth";
-import { MessageCircle, Pencil, X, Download } from "lucide-react";
+import { MessageCircle, Pencil, X, Download, Phone, PhoneOff } from "lucide-react";
 import { DocsManager } from "./DocsManager";
 import { PROCESS_DOC_CATEGORIES, OBS_DOC_CATEGORIES } from "@/lib/leads";
 import { logAction } from "@/lib/actionLog";
@@ -29,13 +30,13 @@ interface Props {
 export function LeadCard({ lead, session, showVendedor, showPullButton, draggable }: Props) {
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState(false);
+  const [chamado, setChamado] = useState<boolean>(!!lead.chamado);
 
   const isDia = (DIA_COLUMNS as LeadStatus[]).includes(lead.status);
   const progress = isDia ? Math.min(1, dayProgress(lead.movido_em)) : 0;
   const hrs = businessHoursSince(lead.movido_em);
   const progressColor = hrs >= 20 ? "bg-danger" : hrs >= 12 ? "bg-warning" : "bg-primary";
 
-  // Alerta de follow-up só no Dia 5
   const alertFollowup = lead.status === "dia_5" && hrs >= 20;
   const borderColor =
     lead.status === "cliente_fechado" ? "border-l-primary"
@@ -59,6 +60,14 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
     logAction(session.name, "lead_puxado", lead.id, { de_vendedor: lead.vendedor });
   };
 
+  const toggleChamado = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const next = !chamado;
+    setChamado(next);
+    await supabase.from("leads").update({ chamado: next } as never).eq("id", lead.id);
+    logAction(session.name, "edicao", lead.id, { campos: ["chamado"], chamado: next });
+  };
+
   const toggleOpen = () => {
     const next = !open;
     setOpen(next);
@@ -70,53 +79,68 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
     e.dataTransfer.effectAllowed = "move";
   };
 
+  const cardClass = chamado
+    ? `bg-called text-called-foreground border-called/60 border-l-4 ${borderColor}`
+    : `bg-surface border-border border-l-4 ${borderColor}`;
+
   return (
     <>
       <div
         draggable={draggable}
         onDragStart={draggable ? onDragStart : undefined}
-        className={`bg-surface border border-border border-l-4 ${borderColor} rounded-lg p-3 space-y-2 ${draggable ? "cursor-grab active:cursor-grabbing" : ""}`}
+        className={`${cardClass} border rounded-lg p-3 space-y-2 ${draggable ? "cursor-grab active:cursor-grabbing" : ""}`}
       >
         <button onClick={toggleOpen} className="w-full text-left">
           {lead.processo && (
-            <div className="text-[10px] font-mono uppercase tracking-wider text-primary truncate">
-              Proc. {lead.processo}
+            <div className={`text-[10px] font-mono uppercase tracking-wider truncate ${chamado ? "text-primary" : "text-primary"}`}>
+              Proc. {formatProcesso(lead.processo)}
             </div>
           )}
           <div className="flex items-start justify-between gap-2">
             <h3 className="font-semibold text-sm truncate flex-1">{lead.nome}</h3>
-            <span className="text-[10px] text-muted-foreground shrink-0">{timeAgo(lead.movido_em)}</span>
+            <span className={`text-[10px] shrink-0 ${chamado ? "text-called-foreground/70" : "text-muted-foreground"}`}>{timeAgo(lead.movido_em)}</span>
           </div>
           {(lead.cnpj || lead.cpf) && (
-            <div className="text-[11px] text-muted-foreground/80 truncate">
+            <div className={`text-[11px] truncate ${chamado ? "text-called-foreground/80" : "text-muted-foreground/80"}`}>
               {lead.cnpj && <>CNPJ {lead.cnpj}</>}
               {lead.cnpj && lead.cpf && " · "}
               {lead.cpf && <>CPF {lead.cpf}</>}
             </div>
           )}
-          <div className="text-xs text-muted-foreground mt-0.5 truncate">{lead.phone}</div>
+          <div className={`text-xs mt-0.5 truncate ${chamado ? "text-called-foreground/90" : "text-muted-foreground"}`}>{lead.phone}</div>
           {(lead.tipo_processo || lead.tribunal) && (
-            <div className="text-[11px] text-muted-foreground/70 mt-0.5 truncate">
+            <div className={`text-[11px] mt-0.5 truncate ${chamado ? "text-called-foreground/70" : "text-muted-foreground/70"}`}>
               {lead.tipo_processo || "—"} · {lead.tribunal || "—"}
             </div>
           )}
           {lead.valor_causa != null && (
-            <div className="text-[11px] text-primary/90 mt-0.5 truncate">
-              Valor da causa: {Number(lead.valor_causa).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+            <div className="text-[11px] font-semibold text-primary mt-1 truncate">
+              💰 Valor da causa: {Number(lead.valor_causa).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
             </div>
           )}
           {showVendedor && (
-            <div className="inline-block mt-1.5 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+            <div className={`inline-block mt-1.5 text-[10px] px-1.5 py-0.5 rounded ${chamado ? "bg-called-foreground/15 text-called-foreground" : "bg-muted text-muted-foreground"}`}>
               {lead.vendedor}
             </div>
           )}
         </button>
 
         {isDia && (
-          <div className="h-1 bg-muted rounded-full overflow-hidden">
+          <div className={`h-1 rounded-full overflow-hidden ${chamado ? "bg-called-foreground/20" : "bg-muted"}`}>
             <div className={`h-full ${progressColor} transition-all`} style={{ width: `${progress * 100}%` }} />
           </div>
         )}
+
+        <button
+          onClick={toggleChamado}
+          className={`w-full inline-flex items-center justify-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md transition ${
+            chamado
+              ? "bg-called-foreground/15 text-called-foreground border border-called-foreground/30 hover:bg-called-foreground/25"
+              : "bg-primary text-primary-foreground hover:opacity-90"
+          }`}
+        >
+          {chamado ? <><PhoneOff className="w-3.5 h-3.5" /> Chamado</> : <><Phone className="w-3.5 h-3.5" /> Não chamado</>}
+        </button>
 
         {showPullButton && (
           <button
@@ -128,16 +152,16 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
         )}
 
         {open && (
-          <div className="pt-2 border-t border-border space-y-2 text-sm">
+          <div className={`pt-2 border-t space-y-2 text-sm ${chamado ? "border-called-foreground/20" : "border-border"}`}>
             <div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Status</div>
+              <div className={`text-[10px] uppercase tracking-wider ${chamado ? "text-called-foreground/70" : "text-muted-foreground"}`}>Status</div>
               <span className={`inline-block text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${STATUS_STYLE[lead.status]}`}>
                 {STATUS_LABEL[lead.status]}
               </span>
             </div>
             {phones.length > 1 && (
               <div>
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Telefones</div>
+                <div className={`text-[10px] uppercase tracking-wider ${chamado ? "text-called-foreground/70" : "text-muted-foreground"}`}>Telefones</div>
                 <div className="space-y-1">
                   {phones.map((p, i) => (
                     <div key={i} className="flex items-center justify-between text-xs">
@@ -150,15 +174,9 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
                 </div>
               </div>
             )}
-            {lead.processo && (
-              <div>
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Processo</div>
-                <div className="text-xs">{lead.processo}</div>
-              </div>
-            )}
             {lead.obs && (
               <div>
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Observações</div>
+                <div className={`text-[10px] uppercase tracking-wider ${chamado ? "text-called-foreground/70" : "text-muted-foreground"}`}>Observações</div>
                 <div className="text-xs whitespace-pre-wrap">{lead.obs}</div>
               </div>
             )}
@@ -166,7 +184,7 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
               <button onClick={() => openWa(lead.phone)} className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground text-xs font-semibold px-2.5 py-1.5 rounded-md">
                 <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
               </button>
-              <button onClick={() => setEdit(true)} className="inline-flex items-center gap-1.5 bg-muted border border-border text-xs font-semibold px-2.5 py-1.5 rounded-md hover:border-primary">
+              <button onClick={() => setEdit(true)} className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-md hover:border-primary ${chamado ? "bg-called-foreground/10 border border-called-foreground/30" : "bg-muted border border-border"}`}>
                 <Pencil className="w-3.5 h-3.5" /> Editar
               </button>
             </div>
@@ -198,6 +216,9 @@ function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; o
   });
   const [saving, setSaving] = useState(false);
 
+  // Vendedor só vê listagem dos próprios docs; admin/jurídico vê e baixa todos
+  const canSeeDocList = session.isManager || session.isLegal;
+
   const save = async () => {
     setSaving(true);
     const statusChanged = form.status !== lead.status;
@@ -220,29 +241,21 @@ function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; o
       phone5: form.phone5 || null,
       tipo_processo: form.tipo_processo || null,
       tribunal: form.tribunal || null,
-      processo: form.processo || null,
+      processo: form.processo ? formatProcesso(form.processo) : null,
       valor_causa: form.valor_causa ? Number(form.valor_causa.replace(",", ".")) : null,
       status: form.status,
       obs: form.obs || null,
       ...(statusChanged ? { movido_em: new Date().toISOString() } : {}),
     }).eq("id", lead.id);
-    if (changedFields.length) {
-      logAction(session.name, "edicao", lead.id, { campos: changedFields });
-    }
-    if (obsChanged) {
-      logAction(session.name, "observacao_alterada", lead.id);
-    }
+    if (changedFields.length) logAction(session.name, "edicao", lead.id, { campos: changedFields });
+    if (obsChanged) logAction(session.name, "observacao_alterada", lead.id);
     if (statusChanged) {
       logAction(session.name, "status_alterado", lead.id, { de: lead.status, para: form.status });
-      if (form.status === "cliente_fechado") {
-        logAction(session.name, "lead_fechado", lead.id);
-      }
+      if (form.status === "cliente_fechado") logAction(session.name, "lead_fechado", lead.id);
     }
     setSaving(false);
     onClose();
   };
-
-
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -253,13 +266,21 @@ function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; o
         </div>
         <div className="p-4 space-y-3">
           <div className="space-y-2">
-            <Field label="Número do processo"><input className="input" value={form.processo} onChange={(e) => setForm({ ...form, processo: e.target.value })} /></Field>
+            <Field label="Número do processo">
+              <input
+                className="input"
+                placeholder="0000000-00.0000.0.00.0000"
+                value={form.processo}
+                onChange={(e) => setForm({ ...form, processo: formatProcesso(e.target.value) })}
+              />
+            </Field>
             <div className="bg-muted/30 border border-border rounded-lg p-2.5">
               <DocsManager
                 leadId={lead.id}
                 categories={PROCESS_DOC_CATEGORIES}
                 filterCategories={PROCESS_DOC_CATEGORIES}
                 title="Documentos do processo"
+                hideList={!canSeeDocList}
               />
             </div>
           </div>
@@ -299,6 +320,7 @@ function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; o
               categories={OBS_DOC_CATEGORIES}
               filterCategories={OBS_DOC_CATEGORIES}
               title="Anexos das observações (Petição Inicial / Contrato)"
+              hideList={!canSeeDocList}
             />
           </div>
         </div>

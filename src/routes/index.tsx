@@ -109,7 +109,7 @@ function App() {
         {tab === "new" && <NewLeadTab session={session} />}
         {tab === "roteiro" && <RoteiroTab />}
         {tab === "painel" && <PainelTab leads={leads} session={session} />}
-        {tab === "admin" && session.isManager && <AdminTab leads={leads} />}
+        {tab === "admin" && session.isManager && <AdminTab leads={leads} session={session} />}
       </main>
 
       <nav className="fixed bottom-0 inset-x-0 z-30 bg-surface/95 backdrop-blur border-t border-border">

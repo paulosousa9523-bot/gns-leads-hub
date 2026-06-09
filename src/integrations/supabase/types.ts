@@ -92,6 +92,7 @@ export type Database = {
       }
       leads: {
         Row: {
+          chamado: boolean
           cnpj: string | null
           cpf: string | null
           criado: string
@@ -114,6 +115,7 @@ export type Database = {
           vendedor: string
         }
         Insert: {
+          chamado?: boolean
           cnpj?: string | null
           cpf?: string | null
           criado?: string
@@ -136,6 +138,7 @@ export type Database = {
           vendedor: string
         }
         Update: {
+          chamado?: boolean
           cnpj?: string | null
           cpf?: string | null
           criado?: string
@@ -155,6 +158,27 @@ export type Database = {
           tribunal?: string | null
           valor_causa?: number | null
           veiculo?: string | null
+          vendedor?: string
+        }
+        Relationships: []
+      }
+      vendedor_senhas: {
+        Row: {
+          atualizado: string
+          criado: string
+          senha: string
+          vendedor: string
+        }
+        Insert: {
+          atualizado?: string
+          criado?: string
+          senha: string
+          vendedor: string
+        }
+        Update: {
+          atualizado?: string
+          criado?: string
+          senha?: string
           vendedor?: string
         }
         Relationships: []
