@@ -186,26 +186,21 @@ export function AdminTab({ leads, session }: { leads: Lead[]; session: Session }
                   <tr key={v} className="border-t border-border">
                     <td className="p-2 font-medium">{v}</td>
                     <td className="p-2 text-muted-foreground">
-                      {senhas[v] ? <span className="text-primary">Definida</span> : <span>Sem senha</span>}
+                      <span className="text-muted-foreground">Definir nova senha</span>
                     </td>
                     <td className="p-2">
                       <input
                         type="text"
-                        placeholder="••••••"
+                        placeholder="mín. 8 caracteres"
                         value={draft[v] || ""}
                         onChange={(e) => setDraft((d) => ({ ...d, [v]: e.target.value }))}
-                        className="bg-muted border border-border rounded-md px-2 py-1 text-xs w-full max-w-[160px]"
+                        className="bg-muted border border-border rounded-md px-2 py-1 text-xs w-full max-w-[180px]"
                       />
                     </td>
-                    <td className="p-2 text-right space-x-1 whitespace-nowrap">
+                    <td className="p-2 text-right whitespace-nowrap">
                       <button onClick={() => saveSenha(v)} className="inline-flex items-center gap-1 bg-primary text-primary-foreground px-2 py-1 rounded-md text-[11px] font-semibold">
                         <Save className="w-3 h-3" /> Salvar
                       </button>
-                      {senhas[v] && (
-                        <button onClick={() => removeSenha(v)} className="inline-flex items-center gap-1 bg-muted border border-border px-2 py-1 rounded-md text-[11px]">
-                          <Trash2 className="w-3 h-3" /> Limpar
-                        </button>
-                      )}
                     </td>
                   </tr>
                 ))}
