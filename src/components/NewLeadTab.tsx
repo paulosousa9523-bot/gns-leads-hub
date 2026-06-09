@@ -6,6 +6,7 @@ import {
   TIPO_PROCESSO_OPTIONS,
   PROCESS_DOC_CATEGORIES,
   OBS_DOC_CATEGORIES,
+  formatProcesso,
   type LeadStatus,
 } from "@/lib/leads";
 import type { Session } from "@/lib/auth";
@@ -146,8 +147,9 @@ export function NewLeadTab({ session }: { session: Session }) {
       <Field label="Número do processo">
         <input
           className={`input ${dup ? "!border-danger" : ""}`}
+          placeholder="0000000-00.0000.0.00.0000"
           value={form.processo}
-          onChange={(e) => setForm({ ...form, processo: e.target.value })}
+          onChange={(e) => setForm({ ...form, processo: formatProcesso(e.target.value) })}
         />
       </Field>
       {dup && (
