@@ -63,7 +63,7 @@ export function LeadsTab({ leads, session }: { leads: Lead[]; session: Session }
     const patch: Record<string, unknown> = { status: col, movido_em: new Date().toISOString() };
     const pulled = lead.status === "funil" && col !== "funil" && !session.isManager;
     if (pulled) patch.vendedor = session.name;
-    await supabase.from("leads").update(patch).eq("id", lead.id);
+    await supabase.from("leads").update(patch as never).eq("id", lead.id);
     logAction(session.name, "status_alterado", lead.id, { de: lead.status, para: col });
     if (col === "cliente_fechado") logAction(session.name, "lead_fechado", lead.id);
     if (pulled) logAction(session.name, "lead_puxado", lead.id, { de_vendedor: lead.vendedor });
