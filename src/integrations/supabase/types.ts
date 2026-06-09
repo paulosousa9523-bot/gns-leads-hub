@@ -162,24 +162,42 @@ export type Database = {
         }
         Relationships: []
       }
-      vendedor_senhas: {
+      profiles: {
         Row: {
-          atualizado: string
           criado: string
-          senha: string
-          vendedor: string
+          display_name: string
+          id: string
+          restricted_vendors: string[] | null
         }
         Insert: {
-          atualizado?: string
           criado?: string
-          senha: string
-          vendedor: string
+          display_name: string
+          id: string
+          restricted_vendors?: string[] | null
         }
         Update: {
-          atualizado?: string
           criado?: string
-          senha?: string
-          vendedor?: string
+          display_name?: string
+          id?: string
+          restricted_vendors?: string[] | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
         }
         Relationships: []
       }
@@ -188,10 +206,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      current_display_name: { Args: never; Returns: string }
+      current_restricted_vendors: { Args: never; Returns: string[] }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_internal_staff: { Args: never; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "vendedor" | "gestor" | "juridico" | "admin_restrito"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -318,6 +345,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["vendedor", "gestor", "juridico", "admin_restrito"],
+    },
   },
 } as const
