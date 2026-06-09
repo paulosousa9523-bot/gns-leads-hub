@@ -190,7 +190,8 @@ export function AdminTab({ leads, session }: { leads: Lead[]; session: Session }
                     </td>
                     <td className="p-2">
                       <input
-                        type="text"
+                        type="password"
+                        autoComplete="new-password"
                         placeholder="mín. 8 caracteres"
                         value={draft[v] || ""}
                         onChange={(e) => setDraft((d) => ({ ...d, [v]: e.target.value }))}
