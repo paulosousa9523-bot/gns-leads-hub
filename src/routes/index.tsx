@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { clearSession, getSession, type Session } from "@/lib/auth";
+import { loadSession, signOut, type Session } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import type { Lead } from "@/lib/leads";
 import { LoginScreen } from "@/components/LoginScreen";
@@ -33,8 +33,27 @@ function App() {
   const [tab, setTab] = useState<Tab>("leads");
 
   useEffect(() => {
-    setSessionState(getSession());
-    setReady(true);
+    let cancelled = false;
+    loadSession().then((s) => {
+      if (!cancelled) {
+        setSessionState(s);
+        setReady(true);
+      }
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event) => {
+      if (event === "SIGNED_OUT") {
+        setSessionState(null);
+        return;
+      }
+      if (event === "SIGNED_IN" || event === "USER_UPDATED" || event === "INITIAL_SESSION") {
+        const s = await loadSession();
+        setSessionState(s);
+      }
+    });
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -85,10 +104,12 @@ function App() {
 
   if (!session) return <LoginScreen onLogin={setSessionState} />;
 
-  const logout = () => {
-    clearSession();
+  const logout = async () => {
+    await signOut();
     setSessionState(null);
+    setLeads([]);
   };
+
 
   return (
     <div className="min-h-screen pb-24">

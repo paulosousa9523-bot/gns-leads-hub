@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { ACTION_LABEL, type ActionType } from "@/lib/actionLog";
 import { VENDEDORES, type Session } from "@/lib/auth";
+import { adminResetPassword } from "@/lib/admin.functions";
 import type { Lead } from "@/lib/leads";
-import { Key, Save, Trash2 } from "lucide-react";
+import { Key, Save } from "lucide-react";
 
 interface ActionRow {
   id: string;
@@ -14,19 +16,14 @@ interface ActionRow {
   criado: string;
 }
 
-interface SenhaRow {
-  vendedor: string;
-  senha: string;
-}
-
 export function AdminTab({ leads, session }: { leads: Lead[]; session: Session }) {
   const allowedVendors = session.restrictedVendors ?? VENDEDORES;
+  const resetPassword = useServerFn(adminResetPassword);
 
   const [rows, setRows] = useState<ActionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterVend, setFilterVend] = useState<string>("");
   const [filterLead, setFilterLead] = useState<string>("");
-  const [senhas, setSenhas] = useState<Record<string, string>>({});
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState("");
 
@@ -53,29 +50,24 @@ export function AdminTab({ leads, session }: { leads: Lead[]; session: Session }
     return () => { cancelled = true; supabase.removeChannel(ch); };
   }, []);
 
-  const loadSenhas = async () => {
-    const { data } = await supabase.from("vendedor_senhas" as never).select("vendedor, senha");
-    const map: Record<string, string> = {};
-    ((data as unknown as SenhaRow[]) || []).forEach((r) => { map[r.vendedor] = r.senha; });
-    setSenhas(map);
-  };
-  useEffect(() => { loadSenhas(); }, []);
-
   const saveSenha = async (vendedor: string) => {
     const senha = (draft[vendedor] || "").trim();
-    if (!senha) return;
-    await supabase.from("vendedor_senhas" as never).upsert({ vendedor, senha, atualizado: new Date().toISOString() } as never);
-    setMsg(`Senha de ${vendedor} salva.`);
-    setDraft((d) => ({ ...d, [vendedor]: "" }));
-    loadSenhas();
-    setTimeout(() => setMsg(""), 2500);
+    if (senha.length < 8) {
+      setMsg(`Senha de ${vendedor} precisa de pelo menos 8 caracteres.`);
+      setTimeout(() => setMsg(""), 2500);
+      return;
+    }
+    try {
+      await resetPassword({ data: { display_name: vendedor, new_password: senha } });
+      setMsg(`Senha de ${vendedor} atualizada.`);
+      setDraft((d) => ({ ...d, [vendedor]: "" }));
+    } catch (e) {
+      setMsg(`Erro ao atualizar senha: ${(e as Error).message}`);
+    }
+    setTimeout(() => setMsg(""), 3000);
   };
 
-  const removeSenha = async (vendedor: string) => {
-    if (!confirm(`Remover senha de ${vendedor}? Ele poderá entrar sem senha.`)) return;
-    await supabase.from("vendedor_senhas" as never).delete().eq("vendedor", vendedor);
-    loadSenhas();
-  };
+
 
   const leadMap = useMemo(() => {
     const m = new Map<string, Lead>();
