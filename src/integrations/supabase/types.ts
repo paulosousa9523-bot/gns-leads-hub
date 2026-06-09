@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      call_logs: {
+        Row: {
+          atualizado: string
+          criado: string
+          duracao_segundos: number
+          encerrado_em: string | null
+          id: string
+          iniciado_em: string
+          lead_id: string
+          observacoes: string | null
+          provider: string | null
+          provider_call_sid: string | null
+          recording_url: string | null
+          status: Database["public"]["Enums"]["call_status"]
+          telefone: string
+          usuario: string
+        }
+        Insert: {
+          atualizado?: string
+          criado?: string
+          duracao_segundos?: number
+          encerrado_em?: string | null
+          id?: string
+          iniciado_em?: string
+          lead_id: string
+          observacoes?: string | null
+          provider?: string | null
+          provider_call_sid?: string | null
+          recording_url?: string | null
+          status?: Database["public"]["Enums"]["call_status"]
+          telefone: string
+          usuario: string
+        }
+        Update: {
+          atualizado?: string
+          criado?: string
+          duracao_segundos?: number
+          encerrado_em?: string | null
+          id?: string
+          iniciado_em?: string
+          lead_id?: string
+          observacoes?: string | null
+          provider?: string | null
+          provider_call_sid?: string | null
+          recording_url?: string | null
+          status?: Database["public"]["Enums"]["call_status"]
+          telefone?: string
+          usuario?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_logs_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_actions: {
         Row: {
           acao: string
@@ -219,6 +278,14 @@ export type Database = {
     }
     Enums: {
       app_role: "vendedor" | "gestor" | "juridico" | "admin_restrito"
+      call_status:
+        | "iniciando"
+        | "em_curso"
+        | "atendida"
+        | "nao_atendida"
+        | "ocupado"
+        | "falhou"
+        | "encerrada"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -347,6 +414,15 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["vendedor", "gestor", "juridico", "admin_restrito"],
+      call_status: [
+        "iniciando",
+        "em_curso",
+        "atendida",
+        "nao_atendida",
+        "ocupado",
+        "falhou",
+        "encerrada",
+      ],
     },
   },
 } as const
