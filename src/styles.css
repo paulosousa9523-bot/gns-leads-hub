@@ -18,25 +18,29 @@
   --color-warning: var(--warning);
   --color-info: var(--info);
   --color-purple: var(--purple);
+  --color-called: var(--called);
+  --color-called-foreground: var(--called-foreground);
   --font-display: "Syne", sans-serif;
   --font-sans: "Inter", sans-serif;
   --radius-lg: 0.75rem;
 }
 
 :root {
-  --background: #0a0c0f;
-  --foreground: #e6edf3;
-  --surface: #111418;
-  --surface-2: #161a20;
-  --border: #1e242d;
-  --muted: #1a1f26;
-  --muted-foreground: #8b95a3;
-  --primary: #00c896;
-  --primary-foreground: #06140f;
+  --background: #0a0a0a;
+  --foreground: #f5ecd1;
+  --surface: #111111;
+  --surface-2: #181818;
+  --border: #2a2418;
+  --muted: #1a1812;
+  --muted-foreground: #b8a878;
+  --primary: #d4af37;
+  --primary-foreground: #1a1408;
   --danger: #ef4444;
   --warning: #eab308;
   --info: #3b82f6;
   --purple: #a855f7;
+  --called: #0b1d49;
+  --called-foreground: #e6edf3;
 }
 
 @layer base {
@@ -46,3 +50,14 @@
   h1,h2,h3,h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
   input, select, textarea, button { font-family: inherit; }
 }
+
+/* Barra de rolagem horizontal sempre visível no kanban */
+.kanban-scroll {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) var(--surface);
+}
+.kanban-scroll::-webkit-scrollbar { height: 12px; }
+.kanban-scroll::-webkit-scrollbar-track { background: var(--surface); border-radius: 6px; }
+.kanban-scroll::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 6px; }
+.kanban-scroll::-webkit-scrollbar-thumb:hover { background: #b8941f; }
