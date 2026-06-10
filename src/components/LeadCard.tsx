@@ -276,7 +276,8 @@ function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; o
   const [saving, setSaving] = useState(false);
 
   // Vendedor só vê listagem dos próprios docs; admin/jurídico vê e baixa todos
-  const canSeeDocList = session.isManager || session.isLegal;
+  // Lista de documentos sempre visível para quem tem acesso ao card.
+  const canSeeDocList = true;
 
   const save = async () => {
     setSaving(true);
