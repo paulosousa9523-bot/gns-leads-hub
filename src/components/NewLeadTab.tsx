@@ -108,9 +108,19 @@ export function NewLeadTab({ session }: { session: Session }) {
       return;
     }
     if (dup) {
-      setMsg("Este processo já está cadastrado. Verifique antes de duplicar.");
+      setMsg(`Este cliente/processo já está cadastrado no CRM (vendedor: ${dup.vendedor}, motivo: ${dup.motivo}).`);
       return;
     }
+    // Revalida no servidor para evitar corrida (alguém pode ter cadastrado em paralelo)
+    try {
+      const phones = [form.phone, form.phone2, form.phone3, form.phone4, form.phone5].filter(Boolean);
+      const res = await checkDup({ data: { processo: form.processo || null, cpf: form.cpf || null, cnpj: form.cnpj || null, phones, nome: form.nome || null } });
+      if (res.duplicate) {
+        setDup(res.duplicate);
+        setMsg(`Este cliente/processo já está cadastrado no CRM (vendedor: ${res.duplicate.vendedor}, motivo: ${res.duplicate.motivo}).`);
+        return;
+      }
+    } catch { /* falha de rede: segue para o insert e RLS ainda barra duplicidade no banco se houver constraint */ }
     setSaving(true);
     setMsg("");
     const { data, error } = await supabase.from("leads").insert({
