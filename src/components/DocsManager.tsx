@@ -14,9 +14,11 @@ interface Props {
   title?: string;
   /** Quando true, exibe somente o upload (sem listar os arquivos). */
   hideList?: boolean;
+  /** Quando true, exibe apenas a lista (sem upload). */
+  showOnlyList?: boolean;
 }
 
-export function DocsManager({ leadId, categories, filterCategories, title, hideList }: Props) {
+export function DocsManager({ leadId, categories, filterCategories, title, hideList, showOnlyList }: Props) {
   const cats = categories && categories.length ? categories : DOC_CATEGORIES;
   const filter = filterCategories ?? cats;
   const [docs, setDocs] = useState<LeadDocument[]>([]);
