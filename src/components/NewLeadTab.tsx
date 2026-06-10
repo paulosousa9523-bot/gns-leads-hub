@@ -38,25 +38,31 @@ export function NewLeadTab({ session }: { session: Session }) {
   });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
-  const [dup, setDup] = useState<{ nome: string; vendedor: string } | null>(null);
+  const [dup, setDup] = useState<DuplicateMatch | null>(null);
   const [procDocs, setProcDocs] = useState<Pending[]>([]);
   const [procCat, setProcCat] = useState<string>(PROCESS_DOC_CATEGORIES[0]);
   const [obsDocs, setObsDocs] = useState<Pending[]>([]);
   const [obsCat, setObsCat] = useState<string>(OBS_DOC_CATEGORIES[0]);
+  const checkDup = useServerFn(checkLeadDuplicate);
 
+  // Validação de duplicidade em tempo real cruzando TODO o CRM (não só os cards do vendedor logado)
   useEffect(() => {
     const proc = form.processo.trim();
-    if (!proc) { setDup(null); return; }
+    const cpf = form.cpf.trim();
+    const cnpj = form.cnpj.trim();
+    const phones = [form.phone, form.phone2, form.phone3, form.phone4, form.phone5].filter(Boolean);
+    const hasAny = proc.length >= 6 || cpf.replace(/\D/g, "").length >= 11 || cnpj.replace(/\D/g, "").length >= 14 || phones.some((p) => p.replace(/\D/g, "").length >= 8);
+    if (!hasAny) { setDup(null); return; }
     const t = setTimeout(async () => {
-      const { data } = await supabase
-        .from("leads")
-        .select("nome, vendedor")
-        .eq("processo", proc)
-        .limit(1);
-      setDup(data && data[0] ? data[0] : null);
-    }, 350);
+      try {
+        const res = await checkDup({ data: { processo: proc || null, cpf: cpf || null, cnpj: cnpj || null, phones, nome: form.nome || null } });
+        setDup(res.duplicate);
+      } catch {
+        setDup(null);
+      }
+    }, 400);
     return () => clearTimeout(t);
-  }, [form.processo]);
+  }, [form.processo, form.cpf, form.cnpj, form.phone, form.phone2, form.phone3, form.phone4, form.phone5, form.nome, checkDup]);
 
   const addPending = (
     e: React.ChangeEvent<HTMLInputElement>,
