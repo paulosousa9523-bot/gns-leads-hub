@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import {
   STATUS_LABEL,
@@ -9,6 +10,7 @@ import {
   formatProcesso,
   type LeadStatus,
 } from "@/lib/leads";
+import { checkLeadDuplicate, type DuplicateMatch } from "@/lib/leads.functions";
 import type { Session } from "@/lib/auth";
 import { AlertTriangle, Paperclip, Trash2, Upload } from "lucide-react";
 import { logAction } from "@/lib/actionLog";
@@ -36,25 +38,31 @@ export function NewLeadTab({ session }: { session: Session }) {
   });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
-  const [dup, setDup] = useState<{ nome: string; vendedor: string } | null>(null);
+  const [dup, setDup] = useState<DuplicateMatch | null>(null);
   const [procDocs, setProcDocs] = useState<Pending[]>([]);
   const [procCat, setProcCat] = useState<string>(PROCESS_DOC_CATEGORIES[0]);
   const [obsDocs, setObsDocs] = useState<Pending[]>([]);
   const [obsCat, setObsCat] = useState<string>(OBS_DOC_CATEGORIES[0]);
+  const checkDup = useServerFn(checkLeadDuplicate);
 
+  // Validação de duplicidade em tempo real cruzando TODO o CRM (não só os cards do vendedor logado)
   useEffect(() => {
     const proc = form.processo.trim();
-    if (!proc) { setDup(null); return; }
+    const cpf = form.cpf.trim();
+    const cnpj = form.cnpj.trim();
+    const phones = [form.phone, form.phone2, form.phone3, form.phone4, form.phone5].filter(Boolean);
+    const hasAny = proc.length >= 6 || cpf.replace(/\D/g, "").length >= 11 || cnpj.replace(/\D/g, "").length >= 14 || phones.some((p) => p.replace(/\D/g, "").length >= 8);
+    if (!hasAny) { setDup(null); return; }
     const t = setTimeout(async () => {
-      const { data } = await supabase
-        .from("leads")
-        .select("nome, vendedor")
-        .eq("processo", proc)
-        .limit(1);
-      setDup(data && data[0] ? data[0] : null);
-    }, 350);
+      try {
+        const res = await checkDup({ data: { processo: proc || null, cpf: cpf || null, cnpj: cnpj || null, phones, nome: form.nome || null } });
+        setDup(res.duplicate);
+      } catch {
+        setDup(null);
+      }
+    }, 400);
     return () => clearTimeout(t);
-  }, [form.processo]);
+  }, [form.processo, form.cpf, form.cnpj, form.phone, form.phone2, form.phone3, form.phone4, form.phone5, form.nome, checkDup]);
 
   const addPending = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -100,9 +108,19 @@ export function NewLeadTab({ session }: { session: Session }) {
       return;
     }
     if (dup) {
-      setMsg("Este processo já está cadastrado. Verifique antes de duplicar.");
+      setMsg(`Este cliente/processo já está cadastrado no CRM (vendedor: ${dup.vendedor}, motivo: ${dup.motivo}).`);
       return;
     }
+    // Revalida no servidor para evitar corrida (alguém pode ter cadastrado em paralelo)
+    try {
+      const phones = [form.phone, form.phone2, form.phone3, form.phone4, form.phone5].filter(Boolean);
+      const res = await checkDup({ data: { processo: form.processo || null, cpf: form.cpf || null, cnpj: form.cnpj || null, phones, nome: form.nome || null } });
+      if (res.duplicate) {
+        setDup(res.duplicate);
+        setMsg(`Este cliente/processo já está cadastrado no CRM (vendedor: ${res.duplicate.vendedor}, motivo: ${res.duplicate.motivo}).`);
+        return;
+      }
+    } catch { /* falha de rede: segue para o insert e RLS ainda barra duplicidade no banco se houver constraint */ }
     setSaving(true);
     setMsg("");
     const { data, error } = await supabase.from("leads").insert({
@@ -156,7 +174,7 @@ export function NewLeadTab({ session }: { session: Session }) {
         <div className="flex items-start gap-2 bg-danger/10 border border-danger/40 text-danger text-xs rounded-md px-3 py-2">
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
           <div>
-            <strong>Cliente já cadastrado!</strong> Este processo pertence a <strong>{dup.nome}</strong> (vendedor: {dup.vendedor}). Não duplique o card.
+            <strong>Cliente/processo já cadastrado no CRM!</strong> Pertence a <strong>{dup.nome}</strong> (vendedor: {dup.vendedor} · motivo: {dup.motivo}). Não duplique o card.
           </div>
         </div>
       )}

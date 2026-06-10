@@ -14,7 +14,7 @@ import {
 } from "@/lib/leads";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@/lib/auth";
-import { MessageCircle, Pencil, X, Download, Phone, PhoneOff } from "lucide-react";
+import { MessageCircle, Pencil, X, Download, Phone, PhoneOff, Trash2, CalendarClock } from "lucide-react";
 import { DocsManager } from "./DocsManager";
 import { PROCESS_DOC_CATEGORIES, OBS_DOC_CATEGORIES } from "@/lib/leads";
 import { logAction } from "@/lib/actionLog";
@@ -142,8 +142,14 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
               💰 Valor da causa: {Number(lead.valor_causa).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
             </div>
           )}
+          <div className={`text-[10px] mt-1 inline-flex items-center gap-1 ${chamado ? "text-called-foreground/70" : "text-muted-foreground/80"}`}>
+            <CalendarClock className="w-3 h-3" />
+            {lead.criado
+              ? <>Criado em: {new Date(lead.criado).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</>
+              : <>Data de criação não registrada</>}
+          </div>
           {showVendedor && (
-            <div className={`inline-block mt-1.5 text-[10px] px-1.5 py-0.5 rounded ${chamado ? "bg-called-foreground/15 text-called-foreground" : "bg-muted text-muted-foreground"}`}>
+            <div className={`inline-block mt-1.5 ml-2 text-[10px] px-1.5 py-0.5 rounded ${chamado ? "bg-called-foreground/15 text-called-foreground" : "bg-muted text-muted-foreground"}`}>
               {lead.vendedor}
             </div>
           )}
@@ -225,6 +231,21 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
               <button onClick={() => setEdit(true)} className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-md hover:border-primary ${chamado ? "bg-called-foreground/10 border border-called-foreground/30" : "bg-muted border border-border"}`}>
                 <Pencil className="w-3.5 h-3.5" /> Editar
               </button>
+              {(session.isManager && !session.isLegal) && (
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (!confirm(`Excluir definitivamente o card de "${lead.nome}"? Esta ação não pode ser desfeita.`)) return;
+                    const { error } = await supabase.from("leads").delete().eq("id", lead.id);
+                    if (error) { alert("Erro ao excluir: " + error.message); return; }
+                    logAction(session.name, "edicao", lead.id, { acao: "excluido", nome: lead.nome });
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-md bg-danger/10 text-danger border border-danger/40 hover:bg-danger/20"
+                  title="Excluir card"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Excluir
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -255,7 +276,8 @@ function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; o
   const [saving, setSaving] = useState(false);
 
   // Vendedor só vê listagem dos próprios docs; admin/jurídico vê e baixa todos
-  const canSeeDocList = session.isManager || session.isLegal;
+  // Lista de documentos sempre visível para quem tem acesso ao card.
+  const canSeeDocList = true;
 
   const save = async () => {
     setSaving(true);
@@ -359,6 +381,15 @@ function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; o
               filterCategories={OBS_DOC_CATEGORIES}
               title="Anexos das observações (Petição Inicial / Contrato)"
               hideList={!canSeeDocList}
+            />
+          </div>
+          {/* Lista única de TODOS os documentos do lead — garante que nada some por filtro de categoria */}
+          <div className="bg-muted/20 border border-border rounded-lg p-2.5">
+            <DocsManager
+              leadId={lead.id}
+              categories={[...PROCESS_DOC_CATEGORIES, ...OBS_DOC_CATEGORIES]}
+              title="Todos os documentos do lead"
+              showOnlyList
             />
           </div>
         </div>
