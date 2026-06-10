@@ -127,7 +127,11 @@ function App() {
 
   useAutoProgression(leads, session);
 
-  if (!ready) return null;
+  if (!ready) return (
+    <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">
+      Carregando…
+    </div>
+  );
 
   if (!session) return <LoginScreen onLogin={setSessionState} />;
 
