@@ -383,6 +383,15 @@ function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; o
               hideList={!canSeeDocList}
             />
           </div>
+          {/* Lista única de TODOS os documentos do lead — garante que nada some por filtro de categoria */}
+          <div className="bg-muted/20 border border-border rounded-lg p-2.5">
+            <DocsManager
+              leadId={lead.id}
+              categories={[...PROCESS_DOC_CATEGORIES, ...OBS_DOC_CATEGORIES]}
+              title="Todos os documentos do lead"
+              showOnlyList
+            />
+          </div>
         </div>
         <div className="p-4 border-t border-border flex gap-2 sticky bottom-0 bg-surface">
           <button onClick={onClose} className="flex-1 bg-muted border border-border rounded-lg py-2.5 font-semibold">Cancelar</button>
