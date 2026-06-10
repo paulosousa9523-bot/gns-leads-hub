@@ -142,8 +142,14 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
               💰 Valor da causa: {Number(lead.valor_causa).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
             </div>
           )}
+          <div className={`text-[10px] mt-1 inline-flex items-center gap-1 ${chamado ? "text-called-foreground/70" : "text-muted-foreground/80"}`}>
+            <CalendarClock className="w-3 h-3" />
+            {lead.criado
+              ? <>Criado em: {new Date(lead.criado).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</>
+              : <>Data de criação não registrada</>}
+          </div>
           {showVendedor && (
-            <div className={`inline-block mt-1.5 text-[10px] px-1.5 py-0.5 rounded ${chamado ? "bg-called-foreground/15 text-called-foreground" : "bg-muted text-muted-foreground"}`}>
+            <div className={`inline-block mt-1.5 ml-2 text-[10px] px-1.5 py-0.5 rounded ${chamado ? "bg-called-foreground/15 text-called-foreground" : "bg-muted text-muted-foreground"}`}>
               {lead.vendedor}
             </div>
           )}
