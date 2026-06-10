@@ -14,7 +14,7 @@ import {
 } from "@/lib/leads";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@/lib/auth";
-import { MessageCircle, Pencil, X, Download, Phone, PhoneOff } from "lucide-react";
+import { MessageCircle, Pencil, X, Download, Phone, PhoneOff, Trash2, CalendarClock } from "lucide-react";
 import { DocsManager } from "./DocsManager";
 import { PROCESS_DOC_CATEGORIES, OBS_DOC_CATEGORIES } from "@/lib/leads";
 import { logAction } from "@/lib/actionLog";
