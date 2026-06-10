@@ -34,24 +34,51 @@ function App() {
 
   useEffect(() => {
     let cancelled = false;
-    loadSession().then((s) => {
-      if (!cancelled) {
-        setSessionState(s);
-        setReady(true);
+    const safeLoad = async () => {
+      try {
+        const s = await loadSession();
+        if (!cancelled) {
+          setSessionState(s);
+          setReady(true);
+        }
+      } catch (err) {
+        console.warn("loadSession falhou, limpando sessão local:", err);
+        // Limpeza segura de tokens supabase corrompidos no localStorage (sem apagar dados do CRM)
+        try {
+          if (typeof window !== "undefined") {
+            Object.keys(localStorage)
+              .filter((k) => k.startsWith("sb-") || k.startsWith("supabase."))
+              .forEach((k) => localStorage.removeItem(k));
+          }
+          await signOut().catch(() => {});
+        } catch { /* noop */ }
+        if (!cancelled) {
+          setSessionState(null);
+          setReady(true);
+        }
       }
-    });
+    };
+    safeLoad();
+    // Fallback: se algo travar a promise, libera a UI em 5s para mostrar o login
+    const watchdog = setTimeout(() => { if (!cancelled) setReady(true); }, 5000);
+
     const { data: sub } = supabase.auth.onAuthStateChange(async (event) => {
       if (event === "SIGNED_OUT") {
         setSessionState(null);
         return;
       }
-      if (event === "SIGNED_IN" || event === "USER_UPDATED" || event === "INITIAL_SESSION") {
-        const s = await loadSession();
-        setSessionState(s);
+      if (event === "SIGNED_IN" || event === "USER_UPDATED") {
+        try {
+          const s = await loadSession();
+          setSessionState(s);
+        } catch (err) {
+          console.warn("loadSession (auth event) falhou:", err);
+        }
       }
     });
     return () => {
       cancelled = true;
+      clearTimeout(watchdog);
       sub.subscription.unsubscribe();
     };
   }, []);
