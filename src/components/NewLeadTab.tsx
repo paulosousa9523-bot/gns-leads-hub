@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import {
   STATUS_LABEL,
@@ -9,6 +10,7 @@ import {
   formatProcesso,
   type LeadStatus,
 } from "@/lib/leads";
+import { checkLeadDuplicate, type DuplicateMatch } from "@/lib/leads.functions";
 import type { Session } from "@/lib/auth";
 import { AlertTriangle, Paperclip, Trash2, Upload } from "lucide-react";
 import { logAction } from "@/lib/actionLog";
