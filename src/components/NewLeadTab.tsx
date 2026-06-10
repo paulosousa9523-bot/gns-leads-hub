@@ -174,7 +174,7 @@ export function NewLeadTab({ session }: { session: Session }) {
         <div className="flex items-start gap-2 bg-danger/10 border border-danger/40 text-danger text-xs rounded-md px-3 py-2">
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
           <div>
-            <strong>Cliente já cadastrado!</strong> Este processo pertence a <strong>{dup.nome}</strong> (vendedor: {dup.vendedor}). Não duplique o card.
+            <strong>Cliente/processo já cadastrado no CRM!</strong> Pertence a <strong>{dup.nome}</strong> (vendedor: {dup.vendedor} · motivo: {dup.motivo}). Não duplique o card.
           </div>
         </div>
       )}
