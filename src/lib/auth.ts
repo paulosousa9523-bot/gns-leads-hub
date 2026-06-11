@@ -70,26 +70,57 @@ export function getSession(): Session | null {
   return _session;
 }
 
+function clearLocalSupabaseTokens() {
+  if (typeof window === "undefined") return;
+  try {
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith("sb-") || k.startsWith("supabase."))
+      .forEach((k) => localStorage.removeItem(k));
+  } catch {
+    /* storage may be unavailable in private mode */
+  }
+}
+
 export async function loadSession(): Promise<Session | null> {
-  const { data: userRes } = await supabase.auth.getUser();
-  const user = userRes?.user;
-  if (!user) {
+  // 1) Read from local storage first — instantaneous, no network. This means
+  // "no cookies/tokens" shows the login screen immediately instead of hanging.
+  const { data: sessionRes } = await supabase.auth.getSession();
+  const localSession = sessionRes?.session;
+  if (!localSession) {
     _session = null;
     return null;
   }
+
+  // 2) Validate against the server, but tolerate failures (e.g. expired refresh
+  // token or transient network issue) by clearing the local session so the user
+  // simply lands on the login screen — never stuck on "Carregando…".
+  let userId = localSession.user.id;
+  let userEmail = localSession.user.email ?? null;
+  try {
+    const { data: userRes, error } = await supabase.auth.getUser();
+    if (error || !userRes?.user) throw error ?? new Error("no user");
+    userId = userRes.user.id;
+    userEmail = userRes.user.email ?? userEmail;
+  } catch {
+    clearLocalSupabaseTokens();
+    await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+    _session = null;
+    return null;
+  }
+
   const [{ data: profile }, { data: roles }] = await Promise.all([
     supabase
       .from("profiles" as never)
       .select("display_name, restricted_vendors")
-      .eq("id", user.id)
+      .eq("id", userId)
       .maybeSingle(),
-    supabase.from("user_roles" as never).select("role").eq("user_id", user.id),
+    supabase.from("user_roles" as never).select("role").eq("user_id", userId),
   ]);
   const prof = profile as { display_name: string; restricted_vendors: string[] | null } | null;
   const roleList = ((roles as unknown as { role: string }[]) ?? []).map((r) => r.role);
   const roleSet = new Set(roleList);
   _session = {
-    name: prof?.display_name ?? user.email ?? "Usuário",
+    name: prof?.display_name ?? userEmail ?? "Usuário",
     isManager:
       roleSet.has("gestor") || roleSet.has("juridico") || roleSet.has("admin_restrito"),
     isLegal: roleSet.has("juridico"),
@@ -105,6 +136,9 @@ export async function signInWithName(
   password: string,
 ): Promise<{ ok: boolean; error?: string }> {
   const email = emailForName(name);
+  // Tokens antigos/quebrados podem fazer o signIn falhar silenciosamente —
+  // limpamos antes para garantir um login limpo, sem precisar de "limpar cookies".
+  clearLocalSupabaseTokens();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { ok: false, error: error.message };
   await loadSession();
@@ -112,9 +146,19 @@ export async function signInWithName(
 }
 
 export async function signOut(): Promise<void> {
-  await supabase.auth.signOut();
+  // Sempre faz logout LOCAL primeiro (não depende da rede), depois tenta o
+  // logout global de melhor esforço. Assim "Sair" funciona mesmo offline ou
+  // com sessão já expirada no servidor.
+  try {
+    await supabase.auth.signOut({ scope: "local" });
+  } catch {
+    /* ignore */
+  }
+  clearLocalSupabaseTokens();
+  supabase.auth.signOut().catch(() => {});
   _session = null;
 }
 
 // Back-compat alias
 export const clearSession = signOut;
+
