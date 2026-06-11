@@ -8,8 +8,8 @@ if (!URL || !KEY) {
 }
 
 export const TEST_PASSWORD = "gns2026";
-export const VENDOR_EMAIL = process.env.E2E_VENDOR_EMAIL || "evandro@gns-leads.app";
-export const VENDOR_NAME = process.env.E2E_VENDOR_NAME || "Evandro";
+export const VENDOR_EMAIL = process.env.E2E_VENDOR_EMAIL || "luiz.guilherme@gns-leads.app";
+export const VENDOR_NAME = process.env.E2E_VENDOR_NAME || "Luiz Guilherme";
 export const GESTOR_EMAIL = process.env.E2E_GESTOR_EMAIL || "paulo.gestor@gns-leads.app";
 
 export function makeClient(): SupabaseClient {
