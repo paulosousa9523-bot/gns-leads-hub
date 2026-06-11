@@ -59,8 +59,8 @@ function App() {
       }
     };
     safeLoad();
-    // Fallback: se algo travar a promise, libera a UI em 5s para mostrar o login
-    const watchdog = setTimeout(() => { if (!cancelled) setReady(true); }, 5000);
+    // Fallback: se algo travar a promise, libera a UI em 2s para mostrar o login
+    const watchdog = setTimeout(() => { if (!cancelled) setReady(true); }, 2000);
 
     const { data: sub } = supabase.auth.onAuthStateChange(async (event) => {
       if (event === "SIGNED_OUT") {
