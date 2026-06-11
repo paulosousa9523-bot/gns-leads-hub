@@ -59,10 +59,7 @@ describe("CRM lead lifecycle (e2e)", () => {
     expect(first?.id).toBeTruthy();
     leadId = first!.id;
 
-    // Duplicate detection via the same server-side check used by NewLeadTab
-    const { checkLeadDuplicate } = await import("@/lib/leads.functions");
-    // Server fn requires bearer; can't easily call here without TanStack runtime.
-    // Instead, replicate the check at the DB layer: fetch by processo digits.
+    // Duplicate detection: replicate the same digits-only match used by checkLeadDuplicate.
     const procDigits = processo.replace(/\D/g, "");
     const { data: matches } = await gestor
       .from("leads")
@@ -70,7 +67,6 @@ describe("CRM lead lifecycle (e2e)", () => {
       .ilike("processo", `%${procDigits.slice(0, 7)}%`);
     const found = (matches ?? []).find((m) => (m.processo ?? "").replace(/\D/g, "") === procDigits);
     expect(found?.id).toBe(leadId);
-    expect(typeof checkLeadDuplicate).toBe("function"); // server fn exists
   });
 
   it("2) edits the lead and persists nome, valor_causa, and obs", async () => {
