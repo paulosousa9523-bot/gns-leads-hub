@@ -206,6 +206,30 @@ export function digitsOnly(s: string | null | undefined): string {
   return (s || "").replace(/\D/g, "");
 }
 
+export function parseCurrencyInput(value: string): number | null {
+  const raw = (value || "").trim();
+  if (!raw) return null;
+
+  const cleaned = raw.replace(/R\$|\s/g, "").replace(/[^\d,.-]/g, "");
+  const lastComma = cleaned.lastIndexOf(",");
+  const lastDot = cleaned.lastIndexOf(".");
+  const decimalSep = lastComma > lastDot ? "," : lastDot > -1 ? "." : "";
+  const normalized = decimalSep
+    ? cleaned
+        .replace(new RegExp(`\\${decimalSep === "," ? "." : ","}`, "g"), "")
+        .replace(decimalSep, ".")
+    : cleaned;
+  const parsed = Number(normalized.replace(/,/g, ""));
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
+}
+
+export function formatCurrencyBR(value: number | string | null | undefined): string {
+  if (value === null || value === undefined || value === "") return "";
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric)) return "";
+  return numeric.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
 export function computeFollowup(_status: LeadStatus): string | null {
   return null;
 }
