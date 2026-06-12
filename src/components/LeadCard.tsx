@@ -233,21 +233,19 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
               <button onClick={() => setEdit(true)} className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-md hover:border-primary ${chamado ? "bg-called-foreground/10 border border-called-foreground/30" : "bg-muted border border-border"}`}>
                 <Pencil className="w-3.5 h-3.5" /> Editar
               </button>
-              {(session.isManager && !session.isLegal) && (
-                <button
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    if (!confirm(`Excluir definitivamente o card de "${lead.nome}"? Esta ação não pode ser desfeita.`)) return;
-                    const { error } = await supabase.from("leads").delete().eq("id", lead.id);
-                    if (error) { alert("Erro ao excluir: " + error.message); return; }
-                    logAction(session.name, "edicao", lead.id, { acao: "excluido", nome: lead.nome });
-                  }}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-md bg-danger/10 text-danger border border-danger/40 hover:bg-danger/20"
-                  title="Excluir card"
-                >
-                  <Trash2 className="w-3.5 h-3.5" /> Excluir
-                </button>
-              )}
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  if (!confirm(`Excluir definitivamente o card de "${lead.nome}"? Esta ação não pode ser desfeita.`)) return;
+                  const { error } = await supabase.from("leads").delete().eq("id", lead.id);
+                  if (error) { alert("Erro ao excluir: " + error.message); return; }
+                  logAction(session.name, "edicao", lead.id, { acao: "excluido", nome: lead.nome });
+                }}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-md bg-danger/10 text-danger border border-danger/40 hover:bg-danger/20"
+                title="Excluir card"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Excluir
+              </button>
             </div>
           </div>
         )}

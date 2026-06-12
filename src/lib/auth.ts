@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export const VENDEDORES = [
+  "TREINAMENTO",
   "Maria Eveline",
   "Ana Clara",
   "Milena Morais",
@@ -34,6 +35,7 @@ export const HOSANNA_VENDEDORES = [
 ];
 
 const STAFF_EMAILS: Record<string, string> = {
+  "TREINAMENTO": "treinamento@gns-leads.app",
   [GESTOR_NAME]: "paulo.gestor@gns-leads.app",
   [JURIDICO_NAME]: "paulo.juridico@gns-leads.app",
   [HOSANNA_NAME]: "hosanna.admin@gns-leads.app",

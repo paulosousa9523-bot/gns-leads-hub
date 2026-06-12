@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { clearLocalSupabaseTokens, loadSession, signOut, type Session } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import type { Lead } from "@/lib/leads";
+import { fetchVisibleLeads } from "@/lib/leads.functions";
 import { LoginScreen } from "@/components/LoginScreen";
 import { LeadsTab } from "@/components/LeadsTab";
 import { NewLeadTab } from "@/components/NewLeadTab";
@@ -31,6 +33,7 @@ function App() {
   const [ready, setReady] = useState(false);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [tab, setTab] = useState<Tab>("leads");
+  const loadVisibleLeads = useServerFn(fetchVisibleLeads);
 
   useEffect(() => {
     let cancelled = false;
@@ -83,8 +86,8 @@ function App() {
     let cancelled = false;
 
     const load = async () => {
-      const { data } = await supabase.from("leads").select("*").order("criado", { ascending: false });
-      if (!cancelled && data) setLeads(data as Lead[]);
+      const data = await loadVisibleLeads();
+      if (!cancelled) setLeads(data as Lead[]);
     };
     load();
 
@@ -114,7 +117,7 @@ function App() {
       cancelled = true;
       supabase.removeChannel(channel);
     };
-  }, [session]);
+  }, [session, loadVisibleLeads]);
 
   useEffect(() => {
     // reset filter handled inside LeadsTab via key
