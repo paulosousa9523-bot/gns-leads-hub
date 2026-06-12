@@ -213,7 +213,11 @@ export function parseCurrencyInput(value: string): number | null {
   const cleaned = raw.replace(/R\$|\s/g, "").replace(/[^\d,.-]/g, "");
   const lastComma = cleaned.lastIndexOf(",");
   const lastDot = cleaned.lastIndexOf(".");
-  const decimalSep = lastComma > lastDot ? "," : lastDot > -1 ? "." : "";
+  const lastSep = Math.max(lastComma, lastDot);
+  const decimals = lastSep >= 0 ? cleaned.length - lastSep - 1 : 0;
+  const decimalSep = lastSep >= 0 && decimals > 0 && decimals <= 2
+    ? cleaned[lastSep]
+    : "";
   const normalized = decimalSep
     ? cleaned
         .replace(new RegExp(`\\${decimalSep === "," ? "." : ","}`, "g"), "")
