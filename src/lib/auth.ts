@@ -124,7 +124,7 @@ export function clearLocalSupabaseTokens() {
 export async function loadSession(): Promise<Session | null> {
   // 1) Read from local storage first — instantaneous, no network. This means
   // "no cookies/tokens" shows the login screen immediately instead of hanging.
-  let localSession = null;
+  let localSession: { user: { id: string; email?: string | null } } | null = null;
   try {
     const { data: sessionRes } = await withTimeout(supabase.auth.getSession(), SESSION_TIMEOUT_MS);
     localSession = sessionRes?.session ?? null;
@@ -155,8 +155,8 @@ export async function loadSession(): Promise<Session | null> {
     return null;
   }
 
-  let profile = null;
-  let roles = null;
+  let profile: unknown = null;
+  let roles: unknown = null;
   try {
     [{ data: profile }, { data: roles }] = await withTimeout(Promise.all([
       supabase
