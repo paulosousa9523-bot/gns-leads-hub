@@ -150,7 +150,7 @@ export async function loadSession(): Promise<Session | null> {
     userEmail = userRes.user.email ?? userEmail;
   } catch {
     clearLocalSupabaseTokens();
-    await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+    await withTimeout(supabase.auth.signOut({ scope: "local" }), SESSION_TIMEOUT_MS).catch(() => {});
     _session = null;
     return null;
   }
@@ -168,7 +168,7 @@ export async function loadSession(): Promise<Session | null> {
     ]), AUTH_TIMEOUT_MS);
   } catch {
     clearLocalSupabaseTokens();
-    await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+    await withTimeout(supabase.auth.signOut({ scope: "local" }), SESSION_TIMEOUT_MS).catch(() => {});
     _session = null;
     return null;
   }
