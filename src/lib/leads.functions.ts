@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Lead } from "./leads";
 
 /**
  * Verifica duplicidade de lead em todo o CRM (bypass RLS via service role),
@@ -20,6 +22,8 @@ export type DuplicateMatch = {
   status: string;
   motivo: string;
 };
+
+const LEAD_COLUMNS = "id, vendedor, nome, phone, phone2, phone3, phone4, phone5, cnpj, cpf, veiculo, tipo_processo, tribunal, processo, valor_causa, status, obs, followup, movido_em, criado, chamado";
 
 export const checkLeadDuplicate = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => CheckInput.parse(input))
@@ -75,4 +79,37 @@ export const checkLeadDuplicate = createServerFn({ method: "POST" })
     }
 
     return { duplicate: null };
+  });
+
+export const fetchVisibleLeads = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<Lead[]> => {
+    const { supabase, userId } = context;
+    const [{ data: profileRaw }, { data: rolesRaw }] = await Promise.all([
+      supabase
+        .from("profiles" as never)
+        .select("display_name, restricted_vendors")
+        .eq("id", userId)
+        .maybeSingle(),
+      supabase.from("user_roles" as never).select("role").eq("user_id", userId),
+    ]);
+
+    const profile = profileRaw as { display_name: string; restricted_vendors: string[] | null } | null;
+    const roles = ((rolesRaw as unknown as { role: string }[]) ?? []).map((r) => r.role);
+    if (!profile || roles.length === 0) return [];
+
+    const isManager = roles.includes("gestor") || roles.includes("juridico");
+    const isRestrictedAdmin = roles.includes("admin_restrito");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    let query = supabaseAdmin.from("leads").select(LEAD_COLUMNS).order("criado", { ascending: false });
+    if (isRestrictedAdmin && profile.restricted_vendors?.length) {
+      query = query.in("vendedor", profile.restricted_vendors);
+    } else if (!isManager) {
+      query = query.or(`vendedor.eq.${profile.display_name},status.eq.funil`);
+    }
+
+    const { data, error } = await query;
+    if (error) throw new Error(error.message);
+    return (data ?? []) as Lead[];
   });
