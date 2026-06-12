@@ -93,7 +93,7 @@ function isAuthStorageKey(key: string) {
   return k.startsWith("sb-") || k.startsWith("supabase.") || k.includes("supabase");
 }
 
-function clearLocalSupabaseTokens() {
+export function clearLocalSupabaseTokens() {
   if (typeof window === "undefined") return;
   try {
     Object.keys(localStorage)
@@ -190,7 +190,7 @@ export async function loadSession(): Promise<Session | null> {
 export async function signInWithName(
   name: string,
   password: string,
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; session?: Session; error?: string }> {
   const email = emailForName(name);
   // Tokens antigos/quebrados podem fazer o signIn falhar silenciosamente —
   // limpamos antes para garantir um login limpo, sem precisar de "limpar cookies".
@@ -205,7 +205,7 @@ export async function signInWithName(
   }
   const session = await loadSession();
   if (!session) return { ok: false, error: "Sessão inválida" };
-  return { ok: true };
+  return { ok: true, session };
 }
 
 export async function signOut(): Promise<void> {
