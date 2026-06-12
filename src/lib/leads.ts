@@ -211,6 +211,7 @@ export function parseCurrencyInput(value: string): number | null {
   if (!raw) return null;
 
   const cleaned = raw.replace(/R\$|\s/g, "").replace(/[^\d,.-]/g, "");
+  if (!/\d/.test(cleaned)) return Number.NaN;
   const lastComma = cleaned.lastIndexOf(",");
   const lastDot = cleaned.lastIndexOf(".");
   const lastSep = Math.max(lastComma, lastDot);
