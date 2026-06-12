@@ -74,14 +74,14 @@ export function getSession(): Session | null {
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
-    const timer = window.setTimeout(() => reject(new Error("auth_timeout")), ms);
+    const timer = globalThis.setTimeout(() => reject(new Error("auth_timeout")), ms);
     promise.then(
       (value) => {
-        window.clearTimeout(timer);
+        globalThis.clearTimeout(timer);
         resolve(value);
       },
       (error) => {
-        window.clearTimeout(timer);
+        globalThis.clearTimeout(timer);
         reject(error);
       },
     );
@@ -124,8 +124,15 @@ function clearLocalSupabaseTokens() {
 export async function loadSession(): Promise<Session | null> {
   // 1) Read from local storage first — instantaneous, no network. This means
   // "no cookies/tokens" shows the login screen immediately instead of hanging.
-  const { data: sessionRes } = await supabase.auth.getSession();
-  const localSession = sessionRes?.session;
+  let localSession = null;
+  try {
+    const { data: sessionRes } = await withTimeout(supabase.auth.getSession(), SESSION_TIMEOUT_MS);
+    localSession = sessionRes?.session ?? null;
+  } catch {
+    clearLocalSupabaseTokens();
+    _session = null;
+    return null;
+  }
   if (!localSession) {
     _session = null;
     return null;
@@ -137,7 +144,7 @@ export async function loadSession(): Promise<Session | null> {
   let userId = localSession.user.id;
   let userEmail = localSession.user.email ?? null;
   try {
-    const { data: userRes, error } = await supabase.auth.getUser();
+    const { data: userRes, error } = await withTimeout(supabase.auth.getUser(), AUTH_TIMEOUT_MS);
     if (error || !userRes?.user) throw error ?? new Error("no user");
     userId = userRes.user.id;
     userEmail = userRes.user.email ?? userEmail;
@@ -148,14 +155,23 @@ export async function loadSession(): Promise<Session | null> {
     return null;
   }
 
-  const [{ data: profile }, { data: roles }] = await Promise.all([
-    supabase
-      .from("profiles" as never)
-      .select("display_name, restricted_vendors")
-      .eq("id", userId)
-      .maybeSingle(),
-    supabase.from("user_roles" as never).select("role").eq("user_id", userId),
-  ]);
+  let profile = null;
+  let roles = null;
+  try {
+    [{ data: profile }, { data: roles }] = await withTimeout(Promise.all([
+      supabase
+        .from("profiles" as never)
+        .select("display_name, restricted_vendors")
+        .eq("id", userId)
+        .maybeSingle(),
+      supabase.from("user_roles" as never).select("role").eq("user_id", userId),
+    ]), AUTH_TIMEOUT_MS);
+  } catch {
+    clearLocalSupabaseTokens();
+    await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+    _session = null;
+    return null;
+  }
   const prof = profile as { display_name: string; restricted_vendors: string[] | null } | null;
   const roleList = ((roles as unknown as { role: string }[]) ?? []).map((r) => r.role);
   const roleSet = new Set(roleList);
@@ -179,9 +195,16 @@ export async function signInWithName(
   // Tokens antigos/quebrados podem fazer o signIn falhar silenciosamente —
   // limpamos antes para garantir um login limpo, sem precisar de "limpar cookies".
   clearLocalSupabaseTokens();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { ok: false, error: error.message };
-  await loadSession();
+  const { error } = await withTimeout(
+    supabase.auth.signInWithPassword({ email, password }),
+    AUTH_TIMEOUT_MS,
+  ).catch((err) => ({ error: err as Error }));
+  if (error) {
+    clearLocalSupabaseTokens();
+    return { ok: false, error: error.message };
+  }
+  const session = await loadSession();
+  if (!session) return { ok: false, error: "Sessão inválida" };
   return { ok: true };
 }
 
@@ -190,12 +213,12 @@ export async function signOut(): Promise<void> {
   // logout global de melhor esforço. Assim "Sair" funciona mesmo offline ou
   // com sessão já expirada no servidor.
   try {
-    await supabase.auth.signOut({ scope: "local" });
+    await withTimeout(supabase.auth.signOut({ scope: "local" }), SESSION_TIMEOUT_MS);
   } catch {
     /* ignore */
   }
   clearLocalSupabaseTokens();
-  supabase.auth.signOut().catch(() => {});
+  withTimeout(supabase.auth.signOut(), SESSION_TIMEOUT_MS).catch(() => {});
   _session = null;
 }
 
