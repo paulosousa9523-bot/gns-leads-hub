@@ -219,11 +219,9 @@ export function parseCurrencyInput(value: string): number | null {
     ? cleaned[lastSep]
     : "";
   const normalized = decimalSep
-    ? cleaned
-        .replace(new RegExp(`\\${decimalSep === "," ? "." : ","}`, "g"), "")
-        .replace(decimalSep, ".")
-    : cleaned;
-  const parsed = Number(normalized.replace(/,/g, ""));
+    ? `${cleaned.slice(0, lastSep).replace(/[.,]/g, "")}.${cleaned.slice(lastSep + 1).replace(/[.,]/g, "")}`
+    : cleaned.replace(/[.,]/g, "");
+  const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : Number.NaN;
 }
 
