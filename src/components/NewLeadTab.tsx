@@ -8,6 +8,7 @@ import {
   PROCESS_DOC_CATEGORIES,
   OBS_DOC_CATEGORIES,
   formatProcesso,
+  parseCurrencyInput,
   type LeadStatus,
 } from "@/lib/leads";
 import { checkLeadDuplicate, type DuplicateMatch } from "@/lib/leads.functions";
@@ -111,6 +112,11 @@ export function NewLeadTab({ session }: { session: Session }) {
       setMsg(`Este cliente/processo já está cadastrado no CRM (vendedor: ${dup.vendedor}, motivo: ${dup.motivo}).`);
       return;
     }
+    const valorCausa = parseCurrencyInput(form.valor_causa);
+    if (Number.isNaN(valorCausa)) {
+      setMsg("Informe um valor da causa válido, ex: 12345,67");
+      return;
+    }
     // Revalida no servidor para evitar corrida (alguém pode ter cadastrado em paralelo)
     try {
       const phones = [form.phone, form.phone2, form.phone3, form.phone4, form.phone5].filter(Boolean);
@@ -136,7 +142,7 @@ export function NewLeadTab({ session }: { session: Session }) {
       tipo_processo: form.tipo_processo || null,
       tribunal: form.tribunal || null,
       processo: form.processo || null,
-      valor_causa: form.valor_causa ? Number(form.valor_causa.replace(",", ".")) : null,
+      valor_causa: valorCausa,
       status: form.status,
       obs: form.obs || null,
       movido_em: new Date().toISOString(),
