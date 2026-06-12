@@ -72,7 +72,7 @@ export function getSession(): Session | null {
   return _session;
 }
 
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+function withTimeout<T>(promise: PromiseLike<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
     const timer = globalThis.setTimeout(() => reject(new Error("auth_timeout")), ms);
     promise.then(
