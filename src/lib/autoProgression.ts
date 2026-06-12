@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { dayProgress, nextAutoStatus, type Lead } from "./leads";
 import type { Session } from "./auth";
@@ -9,16 +9,25 @@ import type { Session } from "./auth";
  * O gestor também roda a varredura para garantir consistência global.
  */
 export function useAutoProgression(leads: Lead[], session: Session | null) {
+  const leadsRef = useRef(leads);
+
+  useEffect(() => {
+    leadsRef.current = leads;
+  }, [leads]);
+
   useEffect(() => {
     if (!session) return;
+    if (session.isLegal) return;
     let cancelled = false;
 
     const tick = async () => {
       if (cancelled) return;
-      const candidates = leads.filter((l) => {
+      const current = leadsRef.current;
+      const candidates = current.filter((l) => {
+        if (session.restrictedVendors && !session.restrictedVendors.includes(l.vendedor)) return false;
         if (!session.isManager && l.vendedor !== session.name) return false;
         return nextAutoStatus(l.status) !== null && dayProgress(l.movido_em) >= 1;
-      });
+      }).slice(0, 25);
       for (const lead of candidates) {
         const ns = nextAutoStatus(lead.status);
         if (!ns) continue;
@@ -31,10 +40,10 @@ export function useAutoProgression(leads: Lead[], session: Session | null) {
     };
 
     tick();
-    const id = setInterval(tick, 60_000);
+    const id = setInterval(tick, 300_000);
     return () => {
       cancelled = true;
       clearInterval(id);
     };
-  }, [leads, session]);
+  }, [session]);
 }
