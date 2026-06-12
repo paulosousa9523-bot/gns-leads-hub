@@ -65,19 +65,59 @@ export function emailForName(name: string): string {
 }
 
 let _session: Session | null = null;
+const AUTH_TIMEOUT_MS = 8_000;
+const SESSION_TIMEOUT_MS = 4_000;
 
 export function getSession(): Session | null {
   return _session;
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error("auth_timeout")), ms);
+    promise.then(
+      (value) => {
+        window.clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        window.clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
+function isAuthStorageKey(key: string) {
+  const k = key.toLowerCase();
+  return k.startsWith("sb-") || k.startsWith("supabase.") || k.includes("supabase");
 }
 
 function clearLocalSupabaseTokens() {
   if (typeof window === "undefined") return;
   try {
     Object.keys(localStorage)
-      .filter((k) => k.startsWith("sb-") || k.startsWith("supabase."))
+      .filter(isAuthStorageKey)
       .forEach((k) => localStorage.removeItem(k));
   } catch {
     /* storage may be unavailable in private mode */
+  }
+  try {
+    Object.keys(sessionStorage)
+      .filter(isAuthStorageKey)
+      .forEach((k) => sessionStorage.removeItem(k));
+  } catch {
+    /* storage may be unavailable in private mode */
+  }
+  try {
+    document.cookie.split(";").forEach((cookie) => {
+      const name = cookie.split("=")[0]?.trim();
+      if (!name || !isAuthStorageKey(name)) return;
+      document.cookie = `${name}=; Max-Age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax`;
+      document.cookie = `${name}=; Max-Age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+    });
+  } catch {
+    /* cookies may be unavailable */
   }
 }
 
