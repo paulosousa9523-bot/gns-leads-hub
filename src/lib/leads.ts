@@ -206,6 +206,33 @@ export function digitsOnly(s: string | null | undefined): string {
   return (s || "").replace(/\D/g, "");
 }
 
+export function parseCurrencyInput(value: string): number | null {
+  const raw = (value || "").trim();
+  if (!raw) return null;
+
+  const cleaned = raw.replace(/R\$|\s/g, "").replace(/[^\d,.-]/g, "");
+  if (!/\d/.test(cleaned)) return Number.NaN;
+  const lastComma = cleaned.lastIndexOf(",");
+  const lastDot = cleaned.lastIndexOf(".");
+  const lastSep = Math.max(lastComma, lastDot);
+  const decimals = lastSep >= 0 ? cleaned.length - lastSep - 1 : 0;
+  const decimalSep = lastSep >= 0 && decimals > 0 && decimals <= 2
+    ? cleaned[lastSep]
+    : "";
+  const normalized = decimalSep
+    ? `${cleaned.slice(0, lastSep).replace(/[.,]/g, "")}.${cleaned.slice(lastSep + 1).replace(/[.,]/g, "")}`
+    : cleaned.replace(/[.,]/g, "");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
+}
+
+export function formatCurrencyBR(value: number | string | null | undefined): string {
+  if (value === null || value === undefined || value === "") return "";
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric)) return "";
+  return numeric.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
 export function computeFollowup(_status: LeadStatus): string | null {
   return null;
 }

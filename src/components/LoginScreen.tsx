@@ -24,9 +24,7 @@ export function LoginScreen({ onLogin }: { onLogin: (s: Session) => void }) {
     const res = await signInWithName(name, password);
     setLoading(false);
     if (!res.ok) return setErr("Usuário ou senha inválidos");
-    // The /index route's onAuthStateChange handler will load and inject the session.
-    // We pass a minimal placeholder so the screen unmounts immediately.
-    onLogin({ name, isManager: false });
+    onLogin(res.session ?? { name, isManager: false });
   };
 
   return (

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { loadSession, signOut, type Session } from "@/lib/auth";
+import { clearLocalSupabaseTokens, loadSession, signOut, type Session } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import type { Lead } from "@/lib/leads";
 import { LoginScreen } from "@/components/LoginScreen";
@@ -45,11 +45,7 @@ function App() {
         console.warn("loadSession falhou, limpando sessão local:", err);
         // Limpeza segura de tokens supabase corrompidos no localStorage (sem apagar dados do CRM)
         try {
-          if (typeof window !== "undefined") {
-            Object.keys(localStorage)
-              .filter((k) => k.startsWith("sb-") || k.startsWith("supabase."))
-              .forEach((k) => localStorage.removeItem(k));
-          }
+          clearLocalSupabaseTokens();
           await signOut().catch(() => {});
         } catch { /* noop */ }
         if (!cancelled) {
@@ -62,18 +58,17 @@ function App() {
     // Fallback: se algo travar a promise, libera a UI em 2s para mostrar o login
     const watchdog = setTimeout(() => { if (!cancelled) setReady(true); }, 2000);
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (event) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") {
         setSessionState(null);
         return;
       }
       if (event === "SIGNED_IN" || event === "USER_UPDATED") {
-        try {
-          const s = await loadSession();
-          setSessionState(s);
-        } catch (err) {
-          console.warn("loadSession (auth event) falhou:", err);
-        }
+        setTimeout(() => {
+          loadSession()
+            .then((s) => { if (!cancelled) setSessionState(s); })
+            .catch((err) => console.warn("loadSession (auth event) falhou:", err));
+        }, 0);
       }
     });
     return () => {

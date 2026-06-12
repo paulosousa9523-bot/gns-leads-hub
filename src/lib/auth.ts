@@ -65,27 +65,74 @@ export function emailForName(name: string): string {
 }
 
 let _session: Session | null = null;
+const AUTH_TIMEOUT_MS = 8_000;
+const SESSION_TIMEOUT_MS = 4_000;
 
 export function getSession(): Session | null {
   return _session;
 }
 
-function clearLocalSupabaseTokens() {
+function withTimeout<T>(promise: PromiseLike<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = globalThis.setTimeout(() => reject(new Error("auth_timeout")), ms);
+    promise.then(
+      (value) => {
+        globalThis.clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        globalThis.clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
+function isAuthStorageKey(key: string) {
+  const k = key.toLowerCase();
+  return k.startsWith("sb-") || k.startsWith("supabase.") || k.includes("supabase");
+}
+
+export function clearLocalSupabaseTokens() {
   if (typeof window === "undefined") return;
   try {
     Object.keys(localStorage)
-      .filter((k) => k.startsWith("sb-") || k.startsWith("supabase."))
+      .filter(isAuthStorageKey)
       .forEach((k) => localStorage.removeItem(k));
   } catch {
     /* storage may be unavailable in private mode */
+  }
+  try {
+    Object.keys(sessionStorage)
+      .filter(isAuthStorageKey)
+      .forEach((k) => sessionStorage.removeItem(k));
+  } catch {
+    /* storage may be unavailable in private mode */
+  }
+  try {
+    document.cookie.split(";").forEach((cookie) => {
+      const name = cookie.split("=")[0]?.trim();
+      if (!name || !isAuthStorageKey(name)) return;
+      document.cookie = `${name}=; Max-Age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax`;
+      document.cookie = `${name}=; Max-Age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+    });
+  } catch {
+    /* cookies may be unavailable */
   }
 }
 
 export async function loadSession(): Promise<Session | null> {
   // 1) Read from local storage first — instantaneous, no network. This means
   // "no cookies/tokens" shows the login screen immediately instead of hanging.
-  const { data: sessionRes } = await supabase.auth.getSession();
-  const localSession = sessionRes?.session;
+  let localSession: { user: { id: string; email?: string | null } } | null = null;
+  try {
+    const { data: sessionRes } = await withTimeout(supabase.auth.getSession(), SESSION_TIMEOUT_MS);
+    localSession = sessionRes?.session ?? null;
+  } catch {
+    clearLocalSupabaseTokens();
+    _session = null;
+    return null;
+  }
   if (!localSession) {
     _session = null;
     return null;
@@ -97,25 +144,34 @@ export async function loadSession(): Promise<Session | null> {
   let userId = localSession.user.id;
   let userEmail = localSession.user.email ?? null;
   try {
-    const { data: userRes, error } = await supabase.auth.getUser();
+    const { data: userRes, error } = await withTimeout(supabase.auth.getUser(), AUTH_TIMEOUT_MS);
     if (error || !userRes?.user) throw error ?? new Error("no user");
     userId = userRes.user.id;
     userEmail = userRes.user.email ?? userEmail;
   } catch {
     clearLocalSupabaseTokens();
-    await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+    await withTimeout(supabase.auth.signOut({ scope: "local" }), SESSION_TIMEOUT_MS).catch(() => {});
     _session = null;
     return null;
   }
 
-  const [{ data: profile }, { data: roles }] = await Promise.all([
-    supabase
-      .from("profiles" as never)
-      .select("display_name, restricted_vendors")
-      .eq("id", userId)
-      .maybeSingle(),
-    supabase.from("user_roles" as never).select("role").eq("user_id", userId),
-  ]);
+  let profile: unknown = null;
+  let roles: unknown = null;
+  try {
+    [{ data: profile }, { data: roles }] = await withTimeout(Promise.all([
+      supabase
+        .from("profiles" as never)
+        .select("display_name, restricted_vendors")
+        .eq("id", userId)
+        .maybeSingle(),
+      supabase.from("user_roles" as never).select("role").eq("user_id", userId),
+    ]), AUTH_TIMEOUT_MS);
+  } catch {
+    clearLocalSupabaseTokens();
+    await withTimeout(supabase.auth.signOut({ scope: "local" }), SESSION_TIMEOUT_MS).catch(() => {});
+    _session = null;
+    return null;
+  }
   const prof = profile as { display_name: string; restricted_vendors: string[] | null } | null;
   const roleList = ((roles as unknown as { role: string }[]) ?? []).map((r) => r.role);
   const roleSet = new Set(roleList);
@@ -134,15 +190,22 @@ export async function loadSession(): Promise<Session | null> {
 export async function signInWithName(
   name: string,
   password: string,
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; session?: Session; error?: string }> {
   const email = emailForName(name);
   // Tokens antigos/quebrados podem fazer o signIn falhar silenciosamente —
   // limpamos antes para garantir um login limpo, sem precisar de "limpar cookies".
   clearLocalSupabaseTokens();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { ok: false, error: error.message };
-  await loadSession();
-  return { ok: true };
+  const { error } = await withTimeout(
+    supabase.auth.signInWithPassword({ email, password }),
+    AUTH_TIMEOUT_MS,
+  ).catch((err) => ({ error: err as Error }));
+  if (error) {
+    clearLocalSupabaseTokens();
+    return { ok: false, error: error.message };
+  }
+  const session = await loadSession();
+  if (!session) return { ok: false, error: "Sessão inválida" };
+  return { ok: true, session };
 }
 
 export async function signOut(): Promise<void> {
@@ -150,12 +213,12 @@ export async function signOut(): Promise<void> {
   // logout global de melhor esforço. Assim "Sair" funciona mesmo offline ou
   // com sessão já expirada no servidor.
   try {
-    await supabase.auth.signOut({ scope: "local" });
+    await withTimeout(supabase.auth.signOut({ scope: "local" }), SESSION_TIMEOUT_MS);
   } catch {
     /* ignore */
   }
   clearLocalSupabaseTokens();
-  supabase.auth.signOut().catch(() => {});
+  withTimeout(supabase.auth.signOut(), SESSION_TIMEOUT_MS).catch(() => {});
   _session = null;
 }
 

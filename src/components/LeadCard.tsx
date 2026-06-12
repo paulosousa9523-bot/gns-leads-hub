@@ -11,6 +11,8 @@ import {
   dayProgress,
   businessHoursSince,
   formatProcesso,
+  formatCurrencyBR,
+  parseCurrencyInput,
 } from "@/lib/leads";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@/lib/auth";
@@ -139,7 +141,7 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
           )}
           {lead.valor_causa != null && (
             <div className="text-[11px] font-semibold text-primary mt-1 truncate">
-              💰 Valor da causa: {Number(lead.valor_causa).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+              💰 Valor da causa: {formatCurrencyBR(lead.valor_causa)}
             </div>
           )}
           <div className={`text-[10px] mt-1 inline-flex items-center gap-1 ${chamado ? "text-called-foreground/70" : "text-muted-foreground/80"}`}>
@@ -281,6 +283,12 @@ function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; o
 
   const save = async () => {
     setSaving(true);
+    const valorCausa = parseCurrencyInput(form.valor_causa);
+    if (Number.isNaN(valorCausa)) {
+      alert("Informe um valor da causa válido, ex: 12345,67");
+      setSaving(false);
+      return;
+    }
     const statusChanged = form.status !== lead.status;
     const obsChanged = (form.obs || "") !== (lead.obs || "");
     const changedFields: string[] = [];
@@ -302,7 +310,7 @@ function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; o
       tipo_processo: form.tipo_processo || null,
       tribunal: form.tribunal || null,
       processo: form.processo ? formatProcesso(form.processo) : null,
-      valor_causa: form.valor_causa ? Number(form.valor_causa.replace(",", ".")) : null,
+      valor_causa: valorCausa,
       status: form.status,
       obs: form.obs || null,
       ...(statusChanged ? { movido_em: new Date().toISOString() } : {}),
