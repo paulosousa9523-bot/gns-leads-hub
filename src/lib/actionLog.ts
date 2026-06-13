@@ -10,7 +10,9 @@ export type ActionType =
   | "observacao_alterada"
   | "anexo_adicionado"
   | "anexo_removido"
-  | "lead_puxado";
+  | "lead_puxado"
+  | "chamado_marcado"
+  | "transferencia_responsavel";
 
 export const ACTION_LABEL: Record<ActionType, string> = {
   lead_aberto: "Abriu lead",
