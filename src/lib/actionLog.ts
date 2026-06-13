@@ -25,6 +25,8 @@ export const ACTION_LABEL: Record<ActionType, string> = {
   anexo_adicionado: "Adicionou anexo",
   anexo_removido: "Removeu anexo",
   lead_puxado: "Puxou lead do funil",
+  chamado_marcado: "Marcou cliente como chamado",
+  transferencia_responsavel: "Transferiu responsabilidade do card",
 };
 
 /**
