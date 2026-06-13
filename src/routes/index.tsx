@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { clearLocalSupabaseTokens, loadSession, signOut, type Session } from "@/lib/auth";
+import { clearLocalSupabaseTokens, GESTOR_NAME, loadSession, signOut, type Session } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import type { Lead } from "@/lib/leads";
 import { fetchVisibleLeads } from "@/lib/leads.functions";
@@ -11,7 +11,8 @@ import { NewLeadTab } from "@/components/NewLeadTab";
 import { RoteiroTab } from "@/components/RoteiroTab";
 import { PainelTab } from "@/components/PainelTab";
 import { AdminTab } from "@/components/AdminTab";
-import { LogOut, Users, Plus, MessageSquare, BarChart3, Shield } from "lucide-react";
+import { GestorDashboardTab } from "@/components/GestorDashboardTab";
+import { LogOut, Users, Plus, MessageSquare, BarChart3, Shield, Trophy } from "lucide-react";
 import { useAutoProgression } from "@/lib/autoProgression";
 
 
