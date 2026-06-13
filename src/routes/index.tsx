@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { clearLocalSupabaseTokens, loadSession, signOut, type Session } from "@/lib/auth";
+import { clearLocalSupabaseTokens, GESTOR_NAME, loadSession, signOut, type Session } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import type { Lead } from "@/lib/leads";
 import { fetchVisibleLeads } from "@/lib/leads.functions";
@@ -11,7 +11,8 @@ import { NewLeadTab } from "@/components/NewLeadTab";
 import { RoteiroTab } from "@/components/RoteiroTab";
 import { PainelTab } from "@/components/PainelTab";
 import { AdminTab } from "@/components/AdminTab";
-import { LogOut, Users, Plus, MessageSquare, BarChart3, Shield } from "lucide-react";
+import { GestorDashboardTab } from "@/components/GestorDashboardTab";
+import { LogOut, Users, Plus, MessageSquare, BarChart3, Shield, Trophy } from "lucide-react";
 import { useAutoProgression } from "@/lib/autoProgression";
 
 
@@ -26,7 +27,7 @@ export const Route = createFileRoute("/")({
   ssr: false,
 });
 
-type Tab = "leads" | "new" | "roteiro" | "painel" | "admin";
+type Tab = "leads" | "new" | "roteiro" | "painel" | "admin" | "gestor";
 
 function App() {
   const [session, setSessionState] = useState<Session | null>(null);
@@ -160,10 +161,11 @@ function App() {
         {tab === "roteiro" && <RoteiroTab />}
         {tab === "painel" && <PainelTab leads={leads} session={session} />}
         {tab === "admin" && session.isManager && <AdminTab leads={leads} session={session} />}
+        {tab === "gestor" && session.name === GESTOR_NAME && <GestorDashboardTab />}
       </main>
 
       <nav className="fixed bottom-0 inset-x-0 z-30 bg-surface/95 backdrop-blur border-t border-border">
-        <div className={`max-w-2xl mx-auto grid ${session.isLegal ? "grid-cols-1" : session.isManager ? "grid-cols-5" : "grid-cols-4"}`}>
+        <div className={`max-w-2xl mx-auto grid ${session.isLegal ? "grid-cols-1" : session.name === GESTOR_NAME ? "grid-cols-6" : session.isManager ? "grid-cols-5" : "grid-cols-4"}`}>
           <TabBtn active={tab === "leads"} onClick={() => setTab("leads")} icon={<Users className="w-5 h-5" />} label={session.isLegal ? "Contratos fechados" : "Leads"} />
           {!session.isLegal && <>
             <TabBtn active={tab === "new"} onClick={() => setTab("new")} icon={<Plus className="w-5 h-5" />} label="Nova" />
@@ -172,6 +174,9 @@ function App() {
           </>}
           {session.isManager && (
             <TabBtn active={tab === "admin"} onClick={() => setTab("admin")} icon={<Shield className="w-5 h-5" />} label="Admin" />
+          )}
+          {session.name === GESTOR_NAME && (
+            <TabBtn active={tab === "gestor"} onClick={() => setTab("gestor")} icon={<Trophy className="w-5 h-5" />} label="Gestor" />
           )}
         </div>
       </nav>
