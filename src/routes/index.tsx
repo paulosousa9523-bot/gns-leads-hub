@@ -161,10 +161,11 @@ function App() {
         {tab === "roteiro" && <RoteiroTab />}
         {tab === "painel" && <PainelTab leads={leads} session={session} />}
         {tab === "admin" && session.isManager && <AdminTab leads={leads} session={session} />}
+        {tab === "gestor" && session.name === GESTOR_NAME && <GestorDashboardTab />}
       </main>
 
       <nav className="fixed bottom-0 inset-x-0 z-30 bg-surface/95 backdrop-blur border-t border-border">
-        <div className={`max-w-2xl mx-auto grid ${session.isLegal ? "grid-cols-1" : session.isManager ? "grid-cols-5" : "grid-cols-4"}`}>
+        <div className={`max-w-2xl mx-auto grid ${session.isLegal ? "grid-cols-1" : session.name === GESTOR_NAME ? "grid-cols-6" : session.isManager ? "grid-cols-5" : "grid-cols-4"}`}>
           <TabBtn active={tab === "leads"} onClick={() => setTab("leads")} icon={<Users className="w-5 h-5" />} label={session.isLegal ? "Contratos fechados" : "Leads"} />
           {!session.isLegal && <>
             <TabBtn active={tab === "new"} onClick={() => setTab("new")} icon={<Plus className="w-5 h-5" />} label="Nova" />
@@ -173,6 +174,9 @@ function App() {
           </>}
           {session.isManager && (
             <TabBtn active={tab === "admin"} onClick={() => setTab("admin")} icon={<Shield className="w-5 h-5" />} label="Admin" />
+          )}
+          {session.name === GESTOR_NAME && (
+            <TabBtn active={tab === "gestor"} onClick={() => setTab("gestor")} icon={<Trophy className="w-5 h-5" />} label="Gestor" />
           )}
         </div>
       </nav>
