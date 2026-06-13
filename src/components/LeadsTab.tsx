@@ -36,21 +36,37 @@ export function LeadsTab({ leads, session }: { leads: Lead[]; session: Session }
     const qDigits = digitsOnly(q);
     const qLower = q.toLowerCase();
     return filteredByOwnership.filter((l) => {
-      if (qDigits) {
+      // Busca numérica (telefone/processo/CPF/CNPJ) — match parcial em qualquer posição
+      if (qDigits.length >= 2) {
         const phones = [l.phone, l.phone2, l.phone3, l.phone4, l.phone5].filter(Boolean) as string[];
         if (phones.some((p) => digitsOnly(p).includes(qDigits))) return true;
         if (digitsOnly(l.processo).includes(qDigits)) return true;
         if (digitsOnly(l.cpf).includes(qDigits)) return true;
         if (digitsOnly(l.cnpj).includes(qDigits)) return true;
       }
-      if ((l.nome || "").toLowerCase().includes(qLower)) return true;
-      return false;
+      // Busca textual ampla — nome, vendedor, tribunal, tipo, observações e campos brutos
+      const haystack = [
+        l.nome, l.vendedor, l.tribunal, l.tipo_processo, l.obs,
+        l.processo, l.cpf, l.cnpj,
+        l.phone, l.phone2, l.phone3, l.phone4, l.phone5,
+      ].filter(Boolean).join(" ").toLowerCase();
+      return haystack.includes(qLower);
     });
   }, [filteredByOwnership, query]);
 
   const visibleByCol = useMemo(() => {
     const map = {} as Record<LeadStatus, Lead[]>;
-    for (const s of COLUMNS) map[s] = searched.filter((l) => l.status === s);
+    for (const s of COLUMNS) {
+      // Não-chamados sobem; chamados (cards azuis) vão para o final da fileira
+      map[s] = searched
+        .filter((l) => l.status === s)
+        .sort((a, b) => {
+          const ca = a.chamado ? 1 : 0;
+          const cb = b.chamado ? 1 : 0;
+          if (ca !== cb) return ca - cb;
+          return new Date(b.movido_em).getTime() - new Date(a.movido_em).getTime();
+        });
+    }
     return map;
   }, [searched, COLUMNS]);
 
