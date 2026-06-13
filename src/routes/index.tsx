@@ -27,7 +27,7 @@ export const Route = createFileRoute("/")({
   ssr: false,
 });
 
-type Tab = "leads" | "new" | "roteiro" | "painel" | "admin";
+type Tab = "leads" | "new" | "roteiro" | "painel" | "admin" | "gestor";
 
 function App() {
   const [session, setSessionState] = useState<Session | null>(null);
