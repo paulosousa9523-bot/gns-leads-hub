@@ -71,7 +71,11 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
     const next = !chamado;
     setChamado(next);
     await supabase.from("leads").update({ chamado: next } as never).eq("id", lead.id);
-    logAction(session.name, "edicao", lead.id, { campos: ["chamado"], chamado: next });
+    if (next) {
+      logAction(session.name, "chamado_marcado", lead.id);
+    } else {
+      logAction(session.name, "edicao", lead.id, { campos: ["chamado"], chamado: next });
+    }
   };
 
   const toggleOpen = () => {
