@@ -403,6 +403,28 @@ function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; o
               {STATUS_ORDER.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
             </select>
           </Field>
+          {canEditJuridico && (
+            <div className="bg-primary/5 border border-primary/30 rounded-lg p-2.5 space-y-2">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">Controle Jurídico</div>
+              <Field label="Status do contrato">
+                <select className="input" value={form.contrato_status} onChange={(e) => setForm({ ...form, contrato_status: e.target.value as ContratoStatus | "" })}>
+                  <option value="">— não definido —</option>
+                  {CONTRATO_STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+              </Field>
+              <Field label="Responsável Jurídico">
+                <select className="input" value={form.responsavel_juridico} onChange={(e) => setForm({ ...form, responsavel_juridico: e.target.value })}>
+                  <option value="">— não atribuído —</option>
+                  {RESPONSAVEIS_JURIDICOS.map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </Field>
+              {lead.responsavel_juridico_em && (
+                <div className="text-[10px] text-muted-foreground">
+                  Atribuído por <b>{lead.responsavel_juridico_por ?? "—"}</b> em {new Date(lead.responsavel_juridico_em).toLocaleString("pt-BR")}
+                </div>
+              )}
+            </div>
+          )}
           <Field label="Observações">
             <textarea className="input min-h-[80px]" value={form.obs} onChange={(e) => setForm({ ...form, obs: e.target.value })} />
           </Field>
