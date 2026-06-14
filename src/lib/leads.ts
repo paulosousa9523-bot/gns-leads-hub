@@ -79,7 +79,22 @@ export interface Lead {
   movido_em: string;
   criado: string;
   chamado?: boolean;
+  contrato_status?: ContratoStatus | null;
+  responsavel_juridico?: string | null;
+  responsavel_juridico_em?: string | null;
+  responsavel_juridico_por?: string | null;
 }
+
+export type ContratoStatus = "andamento" | "finalizado" | "pendencia" | "aguardando_acao";
+
+export const CONTRATO_STATUS_OPTIONS: { value: ContratoStatus; label: string }[] = [
+  { value: "andamento", label: "Em andamento" },
+  { value: "finalizado", label: "Finalizado" },
+  { value: "pendencia", label: "Com pendências" },
+  { value: "aguardando_acao", label: "Aguardando ação" },
+];
+
+export const RESPONSAVEIS_JURIDICOS = ["Gabriele", "Isabela", "Maria"] as const;
 
 export const STATUS_ORDER: LeadStatus[] = [
   "funil",
