@@ -4,6 +4,7 @@ import {
   GESTOR_NAME,
   HOSANNA_NAME,
   JURIDICO_NAME,
+  JURIDICOS_EXTRAS,
   signInWithName,
   VENDEDORES,
   type Session,
@@ -63,8 +64,13 @@ export function LoginScreen({ onLogin }: { onLogin: (s: Session) => void }) {
             </optgroup>
             <optgroup label="Gestão">
               <option value={GESTOR_NAME}>{GESTOR_NAME}</option>
-              <option value={JURIDICO_NAME}>{JURIDICO_NAME}</option>
               <option value={HOSANNA_NAME}>{HOSANNA_NAME}</option>
+            </optgroup>
+            <optgroup label="Jurídico">
+              <option value={JURIDICO_NAME}>{JURIDICO_NAME}</option>
+              {JURIDICOS_EXTRAS.map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
             </optgroup>
           </select>
         </div>

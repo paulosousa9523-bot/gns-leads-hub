@@ -1,11 +1,13 @@
 import { useState } from "react";
-import type { Lead, LeadStatus } from "@/lib/leads";
+import type { Lead, LeadStatus, ContratoStatus } from "@/lib/leads";
 import {
   STATUS_LABEL,
   STATUS_STYLE,
   STATUS_ORDER,
   DIA_COLUMNS,
   TIPO_PROCESSO_OPTIONS,
+  CONTRATO_STATUS_OPTIONS,
+  RESPONSAVEIS_JURIDICOS,
   normalizePhoneForWa,
   timeAgo,
   dayProgress,
@@ -261,6 +263,7 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
 }
 
 function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; onClose: () => void }) {
+  const canEditJuridico = !!session.isLegal || session.name === "Paulo (Gestor)";
   const [form, setForm] = useState({
     nome: lead.nome,
     cnpj: lead.cnpj || "",
@@ -276,6 +279,8 @@ function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; o
     valor_causa: lead.valor_causa != null ? String(lead.valor_causa) : "",
     status: lead.status,
     obs: lead.obs || "",
+    contrato_status: (lead.contrato_status ?? "") as ContratoStatus | "",
+    responsavel_juridico: lead.responsavel_juridico ?? "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -300,6 +305,9 @@ function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; o
       const after = form[f];
       if ((before ?? "") !== (after ?? "")) changedFields.push(f);
     }
+    const contratoStatusChanged = canEditJuridico && (form.contrato_status || null) !== (lead.contrato_status || null);
+    const responsavelChanged = canEditJuridico && (form.responsavel_juridico || null) !== (lead.responsavel_juridico || null);
+    const nowIso = new Date().toISOString();
     await supabase.from("leads").update({
       nome: form.nome,
       cnpj: form.cnpj || null,
@@ -315,13 +323,27 @@ function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; o
       valor_causa: valorCausa,
       status: form.status,
       obs: form.obs || null,
-      ...(statusChanged ? { movido_em: new Date().toISOString() } : {}),
-    }).eq("id", lead.id);
+      ...(statusChanged ? { movido_em: nowIso } : {}),
+      ...(canEditJuridico ? {
+        contrato_status: form.contrato_status || null,
+        responsavel_juridico: form.responsavel_juridico || null,
+        ...(responsavelChanged ? {
+          responsavel_juridico_em: form.responsavel_juridico ? nowIso : null,
+          responsavel_juridico_por: form.responsavel_juridico ? session.name : null,
+        } : {}),
+      } as never : {}),
+    } as never).eq("id", lead.id);
     if (changedFields.length) logAction(session.name, "edicao", lead.id, { campos: changedFields });
     if (obsChanged) logAction(session.name, "observacao_alterada", lead.id);
     if (statusChanged) {
       logAction(session.name, "status_alterado", lead.id, { de: lead.status, para: form.status });
       if (form.status === "cliente_fechado") logAction(session.name, "lead_fechado", lead.id);
+    }
+    if (contratoStatusChanged) {
+      logAction(session.name, "contrato_status_alterado", lead.id, { de: lead.contrato_status ?? null, para: form.contrato_status || null });
+    }
+    if (responsavelChanged) {
+      logAction(session.name, "responsavel_juridico_atribuido", lead.id, { de: lead.responsavel_juridico ?? null, para: form.responsavel_juridico || null });
     }
     setSaving(false);
     onClose();
@@ -381,6 +403,28 @@ function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; o
               {STATUS_ORDER.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
             </select>
           </Field>
+          {canEditJuridico && (
+            <div className="bg-primary/5 border border-primary/30 rounded-lg p-2.5 space-y-2">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">Controle Jurídico</div>
+              <Field label="Status do contrato">
+                <select className="input" value={form.contrato_status} onChange={(e) => setForm({ ...form, contrato_status: e.target.value as ContratoStatus | "" })}>
+                  <option value="">— não definido —</option>
+                  {CONTRATO_STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+              </Field>
+              <Field label="Responsável Jurídico">
+                <select className="input" value={form.responsavel_juridico} onChange={(e) => setForm({ ...form, responsavel_juridico: e.target.value })}>
+                  <option value="">— não atribuído —</option>
+                  {RESPONSAVEIS_JURIDICOS.map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </Field>
+              {lead.responsavel_juridico_em && (
+                <div className="text-[10px] text-muted-foreground">
+                  Atribuído por <b>{lead.responsavel_juridico_por ?? "—"}</b> em {new Date(lead.responsavel_juridico_em).toLocaleString("pt-BR")}
+                </div>
+              )}
+            </div>
+          )}
           <Field label="Observações">
             <textarea className="input min-h-[80px]" value={form.obs} onChange={(e) => setForm({ ...form, obs: e.target.value })} />
           </Field>

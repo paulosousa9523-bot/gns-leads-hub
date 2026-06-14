@@ -25,6 +25,7 @@ export const VENDEDORES = [
 export const GESTOR_NAME = "Paulo (Gestor)";
 export const JURIDICO_NAME = "Paulo (Jurídico)";
 export const HOSANNA_NAME = "Hosanna (Admin)";
+export const JURIDICOS_EXTRAS = ["Gabriele", "Isabela", "Maria"] as const;
 export const HOSANNA_VENDEDORES = [
   "Vitor Damasceno",
   "Matheus Fiaux",
@@ -40,12 +41,15 @@ const STAFF_EMAILS: Record<string, string> = {
   [GESTOR_NAME]: "paulo.gestor@gns-leads.app",
   [JURIDICO_NAME]: "paulo.juridico@gns-leads.app",
   [HOSANNA_NAME]: "hosanna.admin@gns-leads.app",
+  "Gabriele": "gabriele@gns-leads.app",
+  "Isabela": "isabela@gns-leads.app",
+  "Maria": "maria.juridica@gns-leads.app",
   "Raphael Chagas": "rafael.chagas@gns-leads.app",
   // Email original mantido para preservar o login após renomear o vendedor
   "Raíssa Alves": "raissa.cristine@gns-leads.app",
 };
 
-export const ALL_LOGIN_NAMES = [...VENDEDORES, GESTOR_NAME, JURIDICO_NAME, HOSANNA_NAME];
+export const ALL_LOGIN_NAMES = [...VENDEDORES, GESTOR_NAME, JURIDICO_NAME, HOSANNA_NAME, ...JURIDICOS_EXTRAS];
 
 export type Session = {
   name: string;
