@@ -17,6 +17,7 @@ export const TIPO_PROCESSO_OPTIONS = [
   "Revisional de contrato",
   "Procedimento comum cível",
   "Monitoria",
+  "Compra de Carro",
 ] as const;
 
 // Categorias da área principal (ao lado do Número do Processo)
