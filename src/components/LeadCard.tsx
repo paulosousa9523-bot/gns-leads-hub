@@ -305,6 +305,9 @@ function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; o
       const after = form[f];
       if ((before ?? "") !== (after ?? "")) changedFields.push(f);
     }
+    const contratoStatusChanged = canEditJuridico && (form.contrato_status || null) !== (lead.contrato_status || null);
+    const responsavelChanged = canEditJuridico && (form.responsavel_juridico || null) !== (lead.responsavel_juridico || null);
+    const nowIso = new Date().toISOString();
     await supabase.from("leads").update({
       nome: form.nome,
       cnpj: form.cnpj || null,
@@ -320,13 +323,27 @@ function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; o
       valor_causa: valorCausa,
       status: form.status,
       obs: form.obs || null,
-      ...(statusChanged ? { movido_em: new Date().toISOString() } : {}),
-    }).eq("id", lead.id);
+      ...(statusChanged ? { movido_em: nowIso } : {}),
+      ...(canEditJuridico ? {
+        contrato_status: form.contrato_status || null,
+        responsavel_juridico: form.responsavel_juridico || null,
+        ...(responsavelChanged ? {
+          responsavel_juridico_em: form.responsavel_juridico ? nowIso : null,
+          responsavel_juridico_por: form.responsavel_juridico ? session.name : null,
+        } : {}),
+      } as never : {}),
+    } as never).eq("id", lead.id);
     if (changedFields.length) logAction(session.name, "edicao", lead.id, { campos: changedFields });
     if (obsChanged) logAction(session.name, "observacao_alterada", lead.id);
     if (statusChanged) {
       logAction(session.name, "status_alterado", lead.id, { de: lead.status, para: form.status });
       if (form.status === "cliente_fechado") logAction(session.name, "lead_fechado", lead.id);
+    }
+    if (contratoStatusChanged) {
+      logAction(session.name, "contrato_status_alterado", lead.id, { de: lead.contrato_status ?? null, para: form.contrato_status || null });
+    }
+    if (responsavelChanged) {
+      logAction(session.name, "responsavel_juridico_atribuido", lead.id, { de: lead.responsavel_juridico ?? null, para: form.responsavel_juridico || null });
     }
     setSaving(false);
     onClose();
