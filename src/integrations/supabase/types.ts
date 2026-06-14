@@ -153,6 +153,7 @@ export type Database = {
         Row: {
           chamado: boolean
           cnpj: string | null
+          contrato_status: string | null
           cpf: string | null
           criado: string
           followup: string | null
@@ -166,6 +167,9 @@ export type Database = {
           phone4: string | null
           phone5: string | null
           processo: string | null
+          responsavel_juridico: string | null
+          responsavel_juridico_em: string | null
+          responsavel_juridico_por: string | null
           status: string
           tipo_processo: string | null
           tribunal: string | null
@@ -176,6 +180,7 @@ export type Database = {
         Insert: {
           chamado?: boolean
           cnpj?: string | null
+          contrato_status?: string | null
           cpf?: string | null
           criado?: string
           followup?: string | null
@@ -189,6 +194,9 @@ export type Database = {
           phone4?: string | null
           phone5?: string | null
           processo?: string | null
+          responsavel_juridico?: string | null
+          responsavel_juridico_em?: string | null
+          responsavel_juridico_por?: string | null
           status?: string
           tipo_processo?: string | null
           tribunal?: string | null
@@ -199,6 +207,7 @@ export type Database = {
         Update: {
           chamado?: boolean
           cnpj?: string | null
+          contrato_status?: string | null
           cpf?: string | null
           criado?: string
           followup?: string | null
@@ -212,6 +221,9 @@ export type Database = {
           phone4?: string | null
           phone5?: string | null
           processo?: string | null
+          responsavel_juridico?: string | null
+          responsavel_juridico_em?: string | null
+          responsavel_juridico_por?: string | null
           status?: string
           tipo_processo?: string | null
           tribunal?: string | null
