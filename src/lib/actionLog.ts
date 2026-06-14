@@ -29,6 +29,8 @@ export const ACTION_LABEL: Record<ActionType, string> = {
   lead_puxado: "Puxou lead do funil",
   chamado_marcado: "Marcou cliente como chamado",
   transferencia_responsavel: "Transferiu responsabilidade do card",
+  contrato_status_alterado: "Alterou status do contrato (Jurídico)",
+  responsavel_juridico_atribuido: "Atribuiu responsável jurídico",
 };
 
 /**
