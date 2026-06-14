@@ -4,6 +4,7 @@ import {
   GESTOR_NAME,
   HOSANNA_NAME,
   JURIDICO_NAME,
+  JURIDICOS_EXTRAS,
   signInWithName,
   VENDEDORES,
   type Session,
