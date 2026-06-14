@@ -263,6 +263,7 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
 }
 
 function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; onClose: () => void }) {
+  const canEditJuridico = !!session.isLegal || session.name === "Paulo (Gestor)";
   const [form, setForm] = useState({
     nome: lead.nome,
     cnpj: lead.cnpj || "",
@@ -278,6 +279,8 @@ function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; o
     valor_causa: lead.valor_causa != null ? String(lead.valor_causa) : "",
     status: lead.status,
     obs: lead.obs || "",
+    contrato_status: (lead.contrato_status ?? "") as ContratoStatus | "",
+    responsavel_juridico: lead.responsavel_juridico ?? "",
   });
   const [saving, setSaving] = useState(false);
 
