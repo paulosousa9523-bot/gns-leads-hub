@@ -1,11 +1,13 @@
 import { useState } from "react";
-import type { Lead, LeadStatus } from "@/lib/leads";
+import type { Lead, LeadStatus, ContratoStatus } from "@/lib/leads";
 import {
   STATUS_LABEL,
   STATUS_STYLE,
   STATUS_ORDER,
   DIA_COLUMNS,
   TIPO_PROCESSO_OPTIONS,
+  CONTRATO_STATUS_OPTIONS,
+  RESPONSAVEIS_JURIDICOS,
   normalizePhoneForWa,
   timeAgo,
   dayProgress,
