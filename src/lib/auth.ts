@@ -19,6 +19,7 @@ export const VENDEDORES = [
   "Vitor Damasceno",
   "Paulo Sousa",
   "Hosanna Pinheiro",
+  "Emilly Ribeiro",
 ];
 
 export const GESTOR_NAME = "Paulo (Gestor)";
