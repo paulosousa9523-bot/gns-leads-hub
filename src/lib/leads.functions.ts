@@ -23,7 +23,7 @@ export type DuplicateMatch = {
   motivo: string;
 };
 
-const LEAD_COLUMNS = "id, vendedor, nome, phone, phone2, phone3, phone4, phone5, cnpj, cpf, veiculo, tipo_processo, tribunal, processo, valor_causa, status, obs, followup, movido_em, criado, chamado";
+const LEAD_COLUMNS = "id, vendedor, nome, phone, phone2, phone3, phone4, phone5, cnpj, cpf, veiculo, tipo_processo, tribunal, processo, valor_causa, status, obs, followup, movido_em, criado, chamado, contrato_status, responsavel_juridico, responsavel_juridico_em, responsavel_juridico_por";
 
 export const checkLeadDuplicate = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => CheckInput.parse(input))
