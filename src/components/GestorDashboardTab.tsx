@@ -13,7 +13,9 @@ const PERIOD_LABEL: Record<Period, string> = {
 
 export function GestorDashboardTab() {
   const fetchRanking = useServerFn(getGestorRanking);
+  const fetchAudit = useServerFn(getAuditOverview);
   const [data, setData] = useState<RankingPayload | null>(null);
+  const [audit, setAudit] = useState<AuditOverview | null>(null);
   const [period, setPeriod] = useState<Period>("daily");
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -23,8 +25,8 @@ export function GestorDashboardTab() {
     const load = async () => {
       try {
         setLoading(true);
-        const res = await fetchRanking();
-        if (!cancelled) setData(res);
+        const [res, aud] = await Promise.all([fetchRanking(), fetchAudit()]);
+        if (!cancelled) { setData(res); setAudit(aud); }
       } catch (e) {
         if (!cancelled) setErr((e as Error).message);
       } finally {
@@ -34,7 +36,7 @@ export function GestorDashboardTab() {
     load();
     const id = setInterval(load, 60_000);
     return () => { cancelled = true; clearInterval(id); };
-  }, [fetchRanking]);
+  }, [fetchRanking, fetchAudit]);
 
   if (loading && !data) return <div className="text-sm text-muted-foreground">Carregando ranking…</div>;
   if (err) return <div className="text-sm text-danger">Erro: {err}</div>;
