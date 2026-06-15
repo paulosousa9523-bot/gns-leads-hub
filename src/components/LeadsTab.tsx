@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Component, useMemo, useState, type ReactNode } from "react";
 import type { Lead, LeadStatus } from "@/lib/leads";
 import { STATUS_LABEL, STATUS_ORDER, digitsOnly } from "@/lib/leads";
 import { LeadCard } from "./LeadCard";
@@ -6,6 +6,23 @@ import type { Session } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { logAction } from "@/lib/actionLog";
 import { Search } from "lucide-react";
+
+// Boundary individual por card: se um card crashar, isola o erro e mantém a esteira viva.
+class CardBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(error: unknown) { console.error("[LeadCard] crash isolado:", error); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="bg-danger/10 border border-danger/40 text-danger text-xs rounded-lg p-3">
+          Erro ao exibir este card. Atualize a página para tentar novamente.
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export function LeadsTab({ leads, session }: { leads: Lead[]; session: Session }) {
   // Jurídico: contratos fechados + clientes digitados
