@@ -70,13 +70,33 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
 
   const toggleChamado = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const next = !chamado;
+    e.preventDefault();
+    const prev = chamado;
+    const next = !prev;
+    // Atualiza UI imediatamente — qualquer erro reverte o estado local sem derrubar a árvore.
     setChamado(next);
-    await supabase.from("leads").update({ chamado: next } as never).eq("id", lead.id);
-    if (next) {
-      logAction(session.name, "chamado_marcado", lead.id);
-    } else {
-      logAction(session.name, "edicao", lead.id, { campos: ["chamado"], chamado: next });
+    try {
+      const { error } = await supabase
+        .from("leads")
+        .update({ chamado: next } as never)
+        .eq("id", lead.id);
+      if (error) {
+        console.error("[toggleChamado] update falhou:", error);
+        setChamado(prev);
+        return;
+      }
+      try {
+        if (next) {
+          await logAction(session.name, "chamado_marcado", lead.id);
+        } else {
+          await logAction(session.name, "edicao", lead.id, { campos: ["chamado"], chamado: next });
+        }
+      } catch (logErr) {
+        console.warn("[toggleChamado] logAction falhou (silencioso):", logErr);
+      }
+    } catch (err) {
+      console.error("[toggleChamado] exceção inesperada:", err);
+      setChamado(prev);
     }
   };
 
