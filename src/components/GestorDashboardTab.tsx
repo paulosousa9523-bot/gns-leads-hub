@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { getGestorRanking, type RankingPayload, type RankingRow } from "@/lib/ranking.functions";
-import { Trophy, FileText, PhoneCall } from "lucide-react";
+import { getGestorRanking, getAuditOverview, type RankingPayload, type RankingRow, type AuditOverview } from "@/lib/ranking.functions";
+import { Trophy, FileText, PhoneCall, ShieldCheck, AlertTriangle } from "lucide-react";
 
 type Period = "daily" | "weekly" | "monthly";
 
