@@ -46,6 +46,33 @@ export function GestorDashboardTab() {
 
   return (
     <div className="space-y-5">
+      {audit && (
+        <div className="rounded-xl border border-border p-4 bg-surface/30">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.2em] text-primary font-semibold">Auditoria do Sistema</div>
+              <h2 className="text-lg font-semibold">Validação administrativa</h2>
+            </div>
+            <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${audit.status === "Funcionando" ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}`}>
+              {audit.status === "Funcionando" ? <ShieldCheck className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+              {audit.status}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-center">
+            <AuditStat label="Vendedores" value={audit.totalVendedores} />
+            <AuditStat label="Cards no sistema" value={audit.totalCards} />
+            <AuditStat label="Cliente Fechado" value={audit.totalFechados} />
+            <AuditStat label="Visíveis ao Jurídico" value={audit.fechadosVisiveisJuridico} />
+            <AuditStat label="Visíveis ao Gestor" value={audit.fechadosVisiveisGestor} />
+          </div>
+          {audit.inconsistencias.length > 0 && (
+            <ul className="mt-3 text-xs text-warning list-disc pl-5 space-y-1">
+              {audit.inconsistencias.map((m, i) => <li key={i}>{m}</li>)}
+            </ul>
+          )}
+        </div>
+      )}
+
       <div>
         <div className="text-[10px] uppercase tracking-[0.2em] text-primary font-semibold">Dashboard do Gestor</div>
         <h2 className="text-lg font-semibold">Ranking de Produtividade</h2>
@@ -55,6 +82,7 @@ export function GestorDashboardTab() {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
+
         <KpiCard icon={<FileText className="w-4 h-4" />} label="Cards criados (mês)" value={data.totals.cards} />
         <KpiCard icon={<PhoneCall className="w-4 h-4" />} label="Chamados (mês)" value={data.totals.chamados} />
       </div>
