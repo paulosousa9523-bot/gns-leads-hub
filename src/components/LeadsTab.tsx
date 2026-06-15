@@ -177,14 +177,15 @@ function Column({
           const isOwn = l.vendedor === session.name;
           const showPull = isFunil && !session.isManager && !session.isLegal && !isOwn;
           return (
-            <LeadCard
-              key={l.id}
-              lead={l}
-              session={session}
-              showVendedor={showVendedor}
-              showPullButton={showPull}
-              draggable={session.isManager || isOwn}
-            />
+            <CardBoundary key={l.id}>
+              <LeadCard
+                lead={l}
+                session={session}
+                showVendedor={showVendedor}
+                showPullButton={showPull}
+                draggable={session.isManager || isOwn}
+              />
+            </CardBoundary>
           );
         })}
       </div>
