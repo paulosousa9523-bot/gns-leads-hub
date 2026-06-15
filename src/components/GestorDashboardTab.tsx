@@ -145,3 +145,12 @@ function KpiCard({ icon, label, value }: { icon: React.ReactNode; label: string;
     </div>
   );
 }
+
+function AuditStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-lg border border-border p-2 bg-background/40">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="text-xl font-bold tabular-nums">{value}</div>
+    </div>
+  );
+}
