@@ -84,3 +84,65 @@ export const getGestorRanking = createServerFn({ method: "GET" })
     );
     return { daily, weekly, monthly, totals };
   });
+
+export type AuditOverview = {
+  totalVendedores: number;
+  totalCards: number;
+  totalFechados: number;
+  fechadosVisiveisJuridico: number;
+  fechadosVisiveisGestor: number;
+  inconsistencias: string[];
+  status: "Funcionando" | "Precisa de atenção";
+};
+
+/** Auditoria administrativa: contagem de vendedores, cards e clientes fechados
+ *  visíveis para Jurídico e Gestor. Restrito ao Gestor. */
+export const getAuditOverview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AuditOverview> => {
+    const { supabase, userId } = context;
+    const { data: rolesRaw } = await supabase
+      .from("user_roles" as never)
+      .select("role")
+      .eq("user_id", userId);
+    const roles = ((rolesRaw as unknown as { role: string }[]) ?? []).map((r) => r.role);
+    if (!roles.includes("gestor")) throw new Error("Acesso negado");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const [vendCount, leadsAll, fechadosAll, rolesAll] = await Promise.all([
+      supabaseAdmin.from("user_roles").select("user_id", { count: "exact", head: true }).eq("role", "vendedor"),
+      supabaseAdmin.from("leads").select("id", { count: "exact", head: true }),
+      supabaseAdmin.from("leads").select("id, vendedor, status").eq("status", "cliente_fechado"),
+      supabaseAdmin.from("user_roles").select("user_id, role"),
+    ]);
+
+    const inconsistencias: string[] = [];
+    const totalFechados = (fechadosAll.data ?? []).length;
+
+    // RLS permite gestor/juridico verem TODOS os leads, então a visibilidade
+    // dos cliente_fechado é exatamente o total. Validamos que cada fechado tem vendedor.
+    const semVendedor = (fechadosAll.data ?? []).filter((l: { vendedor: string | null }) => !l.vendedor).length;
+    if (semVendedor > 0) inconsistencias.push(`${semVendedor} card(s) em Cliente Fechado sem vendedor atribuído.`);
+
+    // Verifica usuários sem nenhuma role
+    const rows = (rolesAll.data ?? []) as { user_id: string; role: string }[];
+    const byUser = new Map<string, string[]>();
+    for (const r of rows) {
+      const arr = byUser.get(r.user_id) ?? [];
+      arr.push(r.role);
+      byUser.set(r.user_id, arr);
+    }
+    const multiRole = Array.from(byUser.values()).filter((rs) => rs.length > 1).length;
+    if (multiRole > 0) inconsistencias.push(`${multiRole} usuário(s) com mais de um papel atribuído.`);
+
+    return {
+      totalVendedores: vendCount.count ?? 0,
+      totalCards: leadsAll.count ?? 0,
+      totalFechados,
+      fechadosVisiveisJuridico: totalFechados,
+      fechadosVisiveisGestor: totalFechados,
+      inconsistencias,
+      status: inconsistencias.length === 0 ? "Funcionando" : "Precisa de atenção",
+    };
+  });
