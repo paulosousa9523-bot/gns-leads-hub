@@ -222,8 +222,8 @@ export function LeadCard({ lead, session, showVendedor, showPullButton, draggabl
           <div className={`pt-2 border-t space-y-2 text-sm ${chamado ? "border-called-foreground/20" : "border-border"}`}>
             <div>
               <div className={`text-[10px] uppercase tracking-wider ${chamado ? "text-called-foreground/70" : "text-muted-foreground"}`}>Status</div>
-              <span className={`inline-block text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${STATUS_STYLE[lead.status]}`}>
-                {STATUS_LABEL[lead.status]}
+              <span className={`inline-block text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${STATUS_STYLE[lead.status] ?? "bg-muted text-muted-foreground border-border"}`}>
+                {STATUS_LABEL[lead.status] ?? (lead.status || "—")}
               </span>
             </div>
             {phones.length > 1 && (
