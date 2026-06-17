@@ -102,14 +102,26 @@ export const fetchVisibleLeads = createServerFn({ method: "GET" })
     const isRestrictedAdmin = roles.includes("admin_restrito");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    let query = supabaseAdmin.from("leads").select(LEAD_COLUMNS).order("criado", { ascending: false });
-    if (isRestrictedAdmin && profile.restricted_vendors?.length) {
-      query = query.in("vendedor", profile.restricted_vendors);
-    } else if (!isManager) {
-      query = query.or(`vendedor.eq.${profile.display_name},status.eq.funil`);
+    // Pagina em blocos de 1000 para contornar o limite padrão do PostgREST
+    // e garantir que gestor/jurídico vejam TODOS os cards (inclusive antigos).
+    const PAGE = 1000;
+    const all: Lead[] = [];
+    for (let from = 0; ; from += PAGE) {
+      let query = supabaseAdmin
+        .from("leads")
+        .select(LEAD_COLUMNS)
+        .order("criado", { ascending: false })
+        .range(from, from + PAGE - 1);
+      if (isRestrictedAdmin && profile.restricted_vendors?.length) {
+        query = query.in("vendedor", profile.restricted_vendors);
+      } else if (!isManager) {
+        query = query.or(`vendedor.eq.${profile.display_name},status.eq.funil`);
+      }
+      const { data, error } = await query;
+      if (error) throw new Error(error.message);
+      const rows = (data ?? []) as Lead[];
+      all.push(...rows);
+      if (rows.length < PAGE) break;
     }
-
-    const { data, error } = await query;
-    if (error) throw new Error(error.message);
-    return (data ?? []) as Lead[];
+    return all;
   });
