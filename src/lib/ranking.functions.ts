@@ -110,19 +110,32 @@ export const getAuditOverview = createServerFn({ method: "GET" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const [vendCount, leadsAll, fechadosAll, rolesAll] = await Promise.all([
+    // Pagina fechadosAll para contornar o limite padrão do PostgREST (1000)
+    const fechadosAllRows: { id: string; vendedor: string | null; status: string }[] = [];
+    const PAGE = 1000;
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await supabaseAdmin
+        .from("leads")
+        .select("id, vendedor, status")
+        .eq("status", "cliente_fechado")
+        .range(from, from + PAGE - 1);
+      if (error) throw new Error(error.message);
+      const rows = (data ?? []) as { id: string; vendedor: string | null; status: string }[];
+      fechadosAllRows.push(...rows);
+      if (rows.length < PAGE) break;
+    }
+    const [vendCount, leadsAll, rolesAll] = await Promise.all([
       supabaseAdmin.from("user_roles").select("user_id", { count: "exact", head: true }).eq("role", "vendedor"),
       supabaseAdmin.from("leads").select("id", { count: "exact", head: true }),
-      supabaseAdmin.from("leads").select("id, vendedor, status").eq("status", "cliente_fechado"),
       supabaseAdmin.from("user_roles").select("user_id, role"),
     ]);
 
     const inconsistencias: string[] = [];
-    const totalFechados = (fechadosAll.data ?? []).length;
+    const totalFechados = fechadosAllRows.length;
 
     // RLS permite gestor/juridico verem TODOS os leads, então a visibilidade
     // dos cliente_fechado é exatamente o total. Validamos que cada fechado tem vendedor.
-    const semVendedor = (fechadosAll.data ?? []).filter((l: { vendedor: string | null }) => !l.vendedor).length;
+    const semVendedor = fechadosAllRows.filter((l) => !l.vendedor).length;
     if (semVendedor > 0) inconsistencias.push(`${semVendedor} card(s) em Cliente Fechado sem vendedor atribuído.`);
 
     // Verifica usuários sem nenhuma role
