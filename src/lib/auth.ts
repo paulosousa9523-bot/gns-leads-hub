@@ -27,7 +27,7 @@ export const VENDEDORES = [
 export const GESTOR_NAME = "Paulo (Gestor)";
 export const JURIDICO_NAME = "Paulo (Jurídico)";
 export const HOSANNA_NAME = "Hosanna (Admin)";
-export const JURIDICOS_EXTRAS = ["Gabriele", "Isabela", "Maria"] as const;
+export const JURIDICOS_EXTRAS = ["Gabriele", "Isabela", "Maria", "Vitor Gabriel"] as const;
 export const HOSANNA_VENDEDORES = [
   "Hugo",
   "Matheus Fiaux",
