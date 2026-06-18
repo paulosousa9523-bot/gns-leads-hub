@@ -45,6 +45,7 @@ const STAFF_EMAILS: Record<string, string> = {
   "Gabriele": "gabriele@gns-leads.app",
   "Isabela": "isabela@gns-leads.app",
   "Maria": "maria.juridica@gns-leads.app",
+  "Vitor Gabriel": "vitor.gabriel@gns-leads.app",
   "Raphael Chagas": "rafael.chagas@gns-leads.app",
   // Emails originais mantidos para preservar o login após renomear o vendedor
   "Raíssa Alves": "raissa.cristine@gns-leads.app",
