@@ -27,7 +27,7 @@ export const VENDEDORES = [
 export const GESTOR_NAME = "Paulo (Gestor)";
 export const JURIDICO_NAME = "Paulo (Jurídico)";
 export const HOSANNA_NAME = "Hosanna (Admin)";
-export const JURIDICOS_EXTRAS = ["Gabriele", "Isabela", "Maria"] as const;
+export const JURIDICOS_EXTRAS = ["Gabriele", "Isabela", "Maria", "Vitor Gabriel"] as const;
 export const HOSANNA_VENDEDORES = [
   "Hugo",
   "Matheus Fiaux",
@@ -45,6 +45,7 @@ const STAFF_EMAILS: Record<string, string> = {
   "Gabriele": "gabriele@gns-leads.app",
   "Isabela": "isabela@gns-leads.app",
   "Maria": "maria.juridica@gns-leads.app",
+  "Vitor Gabriel": "vitor.gabriel@gns-leads.app",
   "Raphael Chagas": "rafael.chagas@gns-leads.app",
   // Emails originais mantidos para preservar o login após renomear o vendedor
   "Raíssa Alves": "raissa.cristine@gns-leads.app",
