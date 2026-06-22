@@ -26,7 +26,7 @@ class CardBoundary extends Component<{ children: ReactNode }, { hasError: boolea
   }
 }
 
-export function LeadsTab({ leads, session }: { leads: Lead[]; session: Session }) {
+export function LeadsTab({ leads, session, focusLead }: { leads: Lead[]; session: Session; focusLead?: FocusLead }) {
   // Jurídico: contratos fechados + clientes digitados
   // Hosanna (admin restrito): todas as colunas mas só dos vendedores permitidos
   const COLUMNS: LeadStatus[] = session.isLegal
@@ -34,6 +34,21 @@ export function LeadsTab({ leads, session }: { leads: Lead[]; session: Session }
     : STATUS_ORDER.filter((s) => s !== "cliente_digitado");
 
   const [query, setQuery] = useState("");
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  const lastFocusNonce = useRef<number>(0);
+
+  useEffect(() => {
+    if (!focusLead || focusLead.nonce === lastFocusNonce.current) return;
+    lastFocusNonce.current = focusLead.nonce;
+    setQuery(focusLead.nome);
+    setHighlightId(focusLead.id);
+    const tScroll = setTimeout(() => {
+      const el = document.querySelector<HTMLElement>(`[data-lead-id="${focusLead.id}"]`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+    }, 120);
+    const tClear = setTimeout(() => setHighlightId(null), 4000);
+    return () => { clearTimeout(tScroll); clearTimeout(tClear); };
+  }, [focusLead]);
 
   // Vendedor vê próprios; gestor/jurídico/Hosanna vê todos (Hosanna filtrado por restrictedVendors)
   // EXCEÇÃO: contrato/cliente_fechado/cliente_digitado: vendedor só vê os seus
