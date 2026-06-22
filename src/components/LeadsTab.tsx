@@ -150,6 +150,7 @@ export function LeadsTab({ leads, session, focusLead }: { leads: Lead[]; session
                 session={session}
                 onDrop={onDrop}
                 allowDrop={allowDrop}
+                highlightId={highlightId}
               />
             </div>
           ))}
