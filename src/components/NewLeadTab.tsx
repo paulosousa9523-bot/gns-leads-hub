@@ -46,6 +46,23 @@ export function NewLeadTab({ session }: { session: Session }) {
   const [obsDocs, setObsDocs] = useState<Pending[]>([]);
   const [obsCat, setObsCat] = useState<string>(OBS_DOC_CATEGORIES[0]);
   const checkDup = useServerFn(checkLeadDuplicate);
+  const lastDupNotifiedId = useRef<string | null>(null);
+
+  const openExisting = (d: DuplicateMatch) => {
+    window.dispatchEvent(new CustomEvent("crm:open-lead", { detail: { id: d.id, nome: d.nome } }));
+  };
+
+  // Toast imediato quando um novo duplicado é detectado (evita re-disparar para o mesmo id)
+  useEffect(() => {
+    if (!dup) { lastDupNotifiedId.current = null; return; }
+    if (lastDupNotifiedId.current === dup.id) return;
+    lastDupNotifiedId.current = dup.id;
+    toast.error("Card duplicado detectado", {
+      description: `${dup.nome} já existe no CRM — vendedor ${dup.vendedor} · motivo: ${dup.motivo}.`,
+      duration: 8000,
+      action: { label: "Abrir card", onClick: () => openExisting(dup) },
+    });
+  }, [dup]);
 
   // Verificação IMEDIATA por número de processo (não espera os demais campos).
   // Assim que o vendedor digita 6+ dígitos no processo, já cruzamos com TODO o CRM.
