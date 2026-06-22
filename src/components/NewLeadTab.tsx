@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
   STATUS_LABEL,
@@ -13,7 +14,7 @@ import {
 } from "@/lib/leads";
 import { checkLeadDuplicate, type DuplicateMatch } from "@/lib/leads.functions";
 import type { Session } from "@/lib/auth";
-import { AlertTriangle, Paperclip, Trash2, Upload } from "lucide-react";
+import { AlertTriangle, ExternalLink, Paperclip, Trash2, Upload } from "lucide-react";
 import { logAction } from "@/lib/actionLog";
 
 type Pending = { file: File; categoria: string; id: string };
