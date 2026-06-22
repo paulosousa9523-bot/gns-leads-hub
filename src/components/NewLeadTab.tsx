@@ -219,8 +219,17 @@ export function NewLeadTab({ session }: { session: Session }) {
       {dup && (
         <div className="flex items-start gap-2 bg-danger/10 border border-danger/40 text-danger text-xs rounded-md px-3 py-2">
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-          <div>
-            <strong>Cliente/processo já cadastrado no CRM!</strong> Pertence a <strong>{dup.nome}</strong> (vendedor: {dup.vendedor} · motivo: {dup.motivo}). Não duplique o card.
+          <div className="flex-1 space-y-2">
+            <div>
+              <strong>Cliente/processo já cadastrado no CRM!</strong> Pertence a <strong>{dup.nome}</strong> (vendedor: {dup.vendedor} · motivo: {dup.motivo}). Não duplique o card.
+            </div>
+            <button
+              type="button"
+              onClick={() => openExisting(dup)}
+              className="inline-flex items-center gap-1.5 bg-danger text-danger-foreground font-semibold rounded-md px-2.5 py-1 text-xs hover:opacity-90"
+            >
+              <ExternalLink className="w-3 h-3" /> Abrir card existente
+            </button>
           </div>
         </div>
       )}
