@@ -1,4 +1,4 @@
-import { Component, useMemo, useState, type ReactNode } from "react";
+import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Lead, LeadStatus } from "@/lib/leads";
 import { STATUS_LABEL, STATUS_ORDER, digitsOnly } from "@/lib/leads";
 import { LeadCard } from "./LeadCard";
@@ -6,6 +6,8 @@ import type { Session } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { logAction } from "@/lib/actionLog";
 import { Search } from "lucide-react";
+
+export type FocusLead = { id: string; nome: string; nonce: number } | null;
 
 // Boundary individual por card: se um card crashar, isola o erro e mantém a esteira viva.
 class CardBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
