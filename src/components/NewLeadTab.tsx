@@ -46,21 +46,42 @@ export function NewLeadTab({ session }: { session: Session }) {
   const [obsCat, setObsCat] = useState<string>(OBS_DOC_CATEGORIES[0]);
   const checkDup = useServerFn(checkLeadDuplicate);
 
-  // Validação de duplicidade em tempo real cruzando TODO o CRM (não só os cards do vendedor logado)
+  // Verificação IMEDIATA por número de processo (não espera os demais campos).
+  // Assim que o vendedor digita 6+ dígitos no processo, já cruzamos com TODO o CRM.
   useEffect(() => {
     const proc = form.processo.trim();
+    const procDigits = proc.replace(/\D/g, "");
+    if (procDigits.length >= 6) {
+      const t = setTimeout(async () => {
+        try {
+          const res = await checkDup({ data: { processo: proc, cpf: null, cnpj: null, phones: [], nome: null } });
+          if (res.duplicate) { setDup(res.duplicate); return; }
+          // Sem duplicidade por processo: revalida com os demais campos (cpf/cnpj/telefones)
+          const cpf = form.cpf.trim();
+          const cnpj = form.cnpj.trim();
+          const phones = [form.phone, form.phone2, form.phone3, form.phone4, form.phone5].filter(Boolean);
+          const hasOther = cpf.replace(/\D/g, "").length >= 11 || cnpj.replace(/\D/g, "").length >= 14 || phones.some((p) => p.replace(/\D/g, "").length >= 8);
+          if (hasOther) {
+            const res2 = await checkDup({ data: { processo: null, cpf: cpf || null, cnpj: cnpj || null, phones, nome: form.nome || null } });
+            setDup(res2.duplicate);
+          } else {
+            setDup(null);
+          }
+        } catch { setDup(null); }
+      }, 200);
+      return () => clearTimeout(t);
+    }
+    // Sem processo válido ainda: cai no fluxo de validação dos demais campos
     const cpf = form.cpf.trim();
     const cnpj = form.cnpj.trim();
     const phones = [form.phone, form.phone2, form.phone3, form.phone4, form.phone5].filter(Boolean);
-    const hasAny = proc.length >= 6 || cpf.replace(/\D/g, "").length >= 11 || cnpj.replace(/\D/g, "").length >= 14 || phones.some((p) => p.replace(/\D/g, "").length >= 8);
+    const hasAny = cpf.replace(/\D/g, "").length >= 11 || cnpj.replace(/\D/g, "").length >= 14 || phones.some((p) => p.replace(/\D/g, "").length >= 8);
     if (!hasAny) { setDup(null); return; }
     const t = setTimeout(async () => {
       try {
-        const res = await checkDup({ data: { processo: proc || null, cpf: cpf || null, cnpj: cnpj || null, phones, nome: form.nome || null } });
+        const res = await checkDup({ data: { processo: null, cpf: cpf || null, cnpj: cnpj || null, phones, nome: form.nome || null } });
         setDup(res.duplicate);
-      } catch {
-        setDup(null);
-      }
+      } catch { setDup(null); }
     }, 400);
     return () => clearTimeout(t);
   }, [form.processo, form.cpf, form.cnpj, form.phone, form.phone2, form.phone3, form.phone4, form.phone5, form.nome, checkDup]);
