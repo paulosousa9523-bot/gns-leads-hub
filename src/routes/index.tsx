@@ -168,7 +168,7 @@ function App() {
       </header>
 
       <main className="px-4 py-5">
-        {tab === "leads" && <LeadsTab key="leads" leads={leads} session={session} />}
+        {tab === "leads" && <LeadsTab key="leads" leads={leads} session={session} focusLead={focusLead} />}
         {tab === "new" && <NewLeadTab session={session} />}
         {tab === "roteiro" && <RoteiroTab />}
         {tab === "painel" && <PainelTab leads={leads} session={session} />}
