@@ -166,12 +166,14 @@ function Column({
   session,
   onDrop,
   allowDrop,
+  highlightId,
 }: {
   col: LeadStatus;
   leads: Lead[];
   session: Session;
   onDrop: (e: React.DragEvent, c: LeadStatus) => void;
   allowDrop: (e: React.DragEvent) => void;
+  highlightId?: string | null;
 }) {
   const isFunil = col === "funil";
   const showVendedor = session.isManager || session.isLegal || isFunil;
@@ -194,15 +196,21 @@ function Column({
         {leads.map((l) => {
           const isOwn = l.vendedor === session.name;
           const showPull = isFunil && !session.isManager && !session.isLegal && !isOwn;
+          const isHighlighted = highlightId === l.id;
           return (
             <CardBoundary key={l.id}>
-              <LeadCard
-                lead={l}
-                session={session}
-                showVendedor={showVendedor}
-                showPullButton={showPull}
-                draggable={session.isManager || isOwn}
-              />
+              <div
+                data-lead-id={l.id}
+                className={isHighlighted ? "rounded-xl ring-2 ring-primary ring-offset-2 ring-offset-background animate-pulse" : ""}
+              >
+                <LeadCard
+                  lead={l}
+                  session={session}
+                  showVendedor={showVendedor}
+                  showPullButton={showPull}
+                  draggable={session.isManager || isOwn}
+                />
+              </div>
             </CardBoundary>
           );
         })}
