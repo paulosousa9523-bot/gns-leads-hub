@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
   STATUS_LABEL,
@@ -13,7 +14,7 @@ import {
 } from "@/lib/leads";
 import { checkLeadDuplicate, type DuplicateMatch } from "@/lib/leads.functions";
 import type { Session } from "@/lib/auth";
-import { AlertTriangle, Paperclip, Trash2, Upload } from "lucide-react";
+import { AlertTriangle, ExternalLink, Paperclip, Trash2, Upload } from "lucide-react";
 import { logAction } from "@/lib/actionLog";
 
 type Pending = { file: File; categoria: string; id: string };
@@ -45,6 +46,23 @@ export function NewLeadTab({ session }: { session: Session }) {
   const [obsDocs, setObsDocs] = useState<Pending[]>([]);
   const [obsCat, setObsCat] = useState<string>(OBS_DOC_CATEGORIES[0]);
   const checkDup = useServerFn(checkLeadDuplicate);
+  const lastDupNotifiedId = useRef<string | null>(null);
+
+  const openExisting = (d: DuplicateMatch) => {
+    window.dispatchEvent(new CustomEvent("crm:open-lead", { detail: { id: d.id, nome: d.nome } }));
+  };
+
+  // Toast imediato quando um novo duplicado é detectado (evita re-disparar para o mesmo id)
+  useEffect(() => {
+    if (!dup) { lastDupNotifiedId.current = null; return; }
+    if (lastDupNotifiedId.current === dup.id) return;
+    lastDupNotifiedId.current = dup.id;
+    toast.error("Card duplicado detectado", {
+      description: `${dup.nome} já existe no CRM — vendedor ${dup.vendedor} · motivo: ${dup.motivo}.`,
+      duration: 8000,
+      action: { label: "Abrir card", onClick: () => openExisting(dup) },
+    });
+  }, [dup]);
 
   // Verificação IMEDIATA por número de processo (não espera os demais campos).
   // Assim que o vendedor digita 6+ dígitos no processo, já cruzamos com TODO o CRM.
@@ -201,8 +219,17 @@ export function NewLeadTab({ session }: { session: Session }) {
       {dup && (
         <div className="flex items-start gap-2 bg-danger/10 border border-danger/40 text-danger text-xs rounded-md px-3 py-2">
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-          <div>
-            <strong>Cliente/processo já cadastrado no CRM!</strong> Pertence a <strong>{dup.nome}</strong> (vendedor: {dup.vendedor} · motivo: {dup.motivo}). Não duplique o card.
+          <div className="flex-1 space-y-2">
+            <div>
+              <strong>Cliente/processo já cadastrado no CRM!</strong> Pertence a <strong>{dup.nome}</strong> (vendedor: {dup.vendedor} · motivo: {dup.motivo}). Não duplique o card.
+            </div>
+            <button
+              type="button"
+              onClick={() => openExisting(dup)}
+              className="inline-flex items-center gap-1.5 bg-danger text-danger-foreground font-semibold rounded-md px-2.5 py-1 text-xs hover:opacity-90"
+            >
+              <ExternalLink className="w-3 h-3" /> Abrir card existente
+            </button>
           </div>
         </div>
       )}

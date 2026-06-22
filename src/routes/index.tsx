@@ -34,7 +34,19 @@ function App() {
   const [ready, setReady] = useState(false);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [tab, setTab] = useState<Tab>("leads");
+  const [focusLead, setFocusLead] = useState<{ id: string; nome: string; nonce: number } | null>(null);
   const loadVisibleLeads = useServerFn(fetchVisibleLeads);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ id: string; nome: string }>).detail;
+      if (!detail) return;
+      setTab("leads");
+      setFocusLead({ id: detail.id, nome: detail.nome, nonce: Date.now() });
+    };
+    window.addEventListener("crm:open-lead", handler);
+    return () => window.removeEventListener("crm:open-lead", handler);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -156,7 +168,7 @@ function App() {
       </header>
 
       <main className="px-4 py-5">
-        {tab === "leads" && <LeadsTab key="leads" leads={leads} session={session} />}
+        {tab === "leads" && <LeadsTab key="leads" leads={leads} session={session} focusLead={focusLead} />}
         {tab === "new" && <NewLeadTab session={session} />}
         {tab === "roteiro" && <RoteiroTab />}
         {tab === "painel" && <PainelTab leads={leads} session={session} />}
