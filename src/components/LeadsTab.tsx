@@ -102,18 +102,22 @@ export function LeadsTab({ leads, session, focusLead }: { leads: Lead[]; session
   const visibleByCol = useMemo(() => {
     const map = {} as Record<LeadStatus, Lead[]>;
     for (const s of COLUMNS) {
-      // Não-chamados sobem; chamados (cards azuis) vão para o final da fileira
-      map[s] = searched
-        .filter((l) => l.status === s)
-        .sort((a, b) => {
+      let items = searched.filter((l) => l.status === s);
+      if (s === "funil" && minValue !== null) {
+        items = items.filter((l) => typeof l.valor_causa === "number" && (l.valor_causa as number) >= minValue);
+        items.sort((a, b) => ((b.valor_causa ?? 0) as number) - ((a.valor_causa ?? 0) as number));
+      } else {
+        items.sort((a, b) => {
           const ca = a.chamado ? 1 : 0;
           const cb = b.chamado ? 1 : 0;
           if (ca !== cb) return ca - cb;
           return new Date(b.movido_em).getTime() - new Date(a.movido_em).getTime();
         });
+      }
+      map[s] = items;
     }
     return map;
-  }, [searched, COLUMNS]);
+  }, [searched, COLUMNS, minValue]);
 
   const onDrop = async (e: React.DragEvent, col: LeadStatus) => {
     e.preventDefault();
