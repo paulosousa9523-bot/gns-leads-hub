@@ -210,7 +210,7 @@ export function NewLeadTab({ session }: { session: Session }) {
     <form onSubmit={save} className="space-y-3 max-w-lg mx-auto">
       <h2 className="text-xl font-bold">Nova lead</h2>
 
-      <Field label="Número do processo *">
+      <Field label="Número do processo" required>
         <input
           required
           className={`input ${dup ? "!border-danger" : ""}`}
@@ -248,10 +248,10 @@ export function NewLeadTab({ session }: { session: Session }) {
         onAdd={(e) => addPending(e, procCat, setProcDocs)}
       />
 
-      <Field label="Nome do cliente *"><input required className="input" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></Field>
+      <Field label="Nome do cliente" required><input required className="input" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="CNPJ"><input className="input" placeholder="00.000.000/0000-00" value={form.cnpj} onChange={(e) => setForm({ ...form, cnpj: e.target.value })} /></Field>
-        <Field label="CPF *"><input required className="input" placeholder="000.000.000-00" value={form.cpf} onChange={(e) => setForm({ ...form, cpf: e.target.value })} /></Field>
+        <Field label="CPF" required><input required className="input" placeholder="000.000.000-00" value={form.cpf} onChange={(e) => setForm({ ...form, cpf: e.target.value })} /></Field>
       </div>
       <Field label="Telefone 1 (com DDD) *"><input required className="input" placeholder="11 99999-9999" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field>
       <div className="grid grid-cols-2 gap-3">
@@ -267,7 +267,7 @@ export function NewLeadTab({ session }: { session: Session }) {
         </select>
       </Field>
       <Field label="Tribunal"><input className="input" placeholder="Ex: TJ-SP" value={form.tribunal} onChange={(e) => setForm({ ...form, tribunal: e.target.value })} /></Field>
-      <Field label="Valor da causa (R$) *">
+      <Field label="Valor da causa (R$)" required>
         <input required className="input" inputMode="decimal" placeholder="0,00" value={form.valor_causa} onChange={(e) => setForm({ ...form, valor_causa: e.target.value })} />
       </Field>
       <Field label="Coluna inicial">
@@ -342,10 +342,13 @@ function PendingDocs({
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <label className="block space-y-1">
-      <span className="text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className={`text-xs uppercase tracking-wider ${required ? "text-primary font-semibold" : "text-muted-foreground"}`}>
+        {label}
+        {required && <span className="ml-0.5 text-danger">*</span>}
+      </span>
       {children}
     </label>
   );
