@@ -34,8 +34,19 @@ export function LeadsTab({ leads, session, focusLead }: { leads: Lead[]; session
     : STATUS_ORDER.filter((s) => s !== "cliente_digitado");
 
   const [query, setQuery] = useState("");
+  const [minValueInput, setMinValueInput] = useState("");
+  const [minValue, setMinValue] = useState<number | null>(null);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const lastFocusNonce = useRef<number>(0);
+
+  const applyValueFilter = () => {
+    const raw = minValueInput.trim();
+    if (!raw) { setMinValue(null); return; }
+    const parsed = parseCurrencyInput(raw);
+    if (parsed === null || !Number.isFinite(parsed)) { setMinValue(null); return; }
+    setMinValue(parsed);
+  };
+  const clearValueFilter = () => { setMinValueInput(""); setMinValue(null); };
 
   useEffect(() => {
     if (!focusLead || focusLead.nonce === lastFocusNonce.current) return;
