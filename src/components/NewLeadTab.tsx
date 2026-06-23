@@ -143,17 +143,19 @@ export function NewLeadTab({ session }: { session: Session }) {
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.nome || !form.phone) {
-      setMsg("Nome e telefone principal são obrigatórios");
+    const procDigits = form.processo.replace(/\D/g, "");
+    const cpfDigits = form.cpf.replace(/\D/g, "");
+    const valorCausa = parseCurrencyInput(form.valor_causa);
+    if (!form.nome.trim()) { setMsg("Nome do cliente é obrigatório"); return; }
+    if (procDigits.length < 6) { setMsg("Número do processo é obrigatório"); return; }
+    if (cpfDigits.length !== 11) { setMsg("CPF é obrigatório (11 dígitos)"); return; }
+    if (valorCausa === null || Number.isNaN(valorCausa) || valorCausa <= 0) {
+      setMsg("Valor da causa é obrigatório (ex: 12345,67)");
       return;
     }
+    if (!form.phone.trim()) { setMsg("Telefone principal é obrigatório"); return; }
     if (dup) {
       setMsg(`Este cliente/processo já está cadastrado no CRM (vendedor: ${dup.vendedor}, motivo: ${dup.motivo}).`);
-      return;
-    }
-    const valorCausa = parseCurrencyInput(form.valor_causa);
-    if (Number.isNaN(valorCausa)) {
-      setMsg("Informe um valor da causa válido, ex: 12345,67");
       return;
     }
     // Revalida no servidor para evitar corrida (alguém pode ter cadastrado em paralelo)
@@ -208,8 +210,9 @@ export function NewLeadTab({ session }: { session: Session }) {
     <form onSubmit={save} className="space-y-3 max-w-lg mx-auto">
       <h2 className="text-xl font-bold">Nova lead</h2>
 
-      <Field label="Número do processo">
+      <Field label="Número do processo *">
         <input
+          required
           className={`input ${dup ? "!border-danger" : ""}`}
           placeholder="0000000-00.0000.0.00.0000"
           value={form.processo}
@@ -248,7 +251,7 @@ export function NewLeadTab({ session }: { session: Session }) {
       <Field label="Nome do cliente *"><input required className="input" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="CNPJ"><input className="input" placeholder="00.000.000/0000-00" value={form.cnpj} onChange={(e) => setForm({ ...form, cnpj: e.target.value })} /></Field>
-        <Field label="CPF"><input className="input" placeholder="000.000.000-00" value={form.cpf} onChange={(e) => setForm({ ...form, cpf: e.target.value })} /></Field>
+        <Field label="CPF *"><input required className="input" placeholder="000.000.000-00" value={form.cpf} onChange={(e) => setForm({ ...form, cpf: e.target.value })} /></Field>
       </div>
       <Field label="Telefone 1 (com DDD) *"><input required className="input" placeholder="11 99999-9999" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field>
       <div className="grid grid-cols-2 gap-3">
@@ -264,8 +267,8 @@ export function NewLeadTab({ session }: { session: Session }) {
         </select>
       </Field>
       <Field label="Tribunal"><input className="input" placeholder="Ex: TJ-SP" value={form.tribunal} onChange={(e) => setForm({ ...form, tribunal: e.target.value })} /></Field>
-      <Field label="Valor da causa (R$)">
-        <input className="input" inputMode="decimal" placeholder="0,00" value={form.valor_causa} onChange={(e) => setForm({ ...form, valor_causa: e.target.value })} />
+      <Field label="Valor da causa (R$) *">
+        <input required className="input" inputMode="decimal" placeholder="0,00" value={form.valor_causa} onChange={(e) => setForm({ ...form, valor_causa: e.target.value })} />
       </Field>
       <Field label="Coluna inicial">
         <select className="input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as LeadStatus })}>
