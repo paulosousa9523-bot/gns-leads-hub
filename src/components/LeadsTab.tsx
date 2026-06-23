@@ -154,6 +154,40 @@ export function LeadsTab({ leads, session, focusLead }: { leads: Lead[]; session
         </div>
       </div>
 
+      {/* Filtro por valor da causa (Funil Geral) */}
+      <div className="flex flex-wrap items-end gap-2 bg-muted/30 border border-border rounded-lg p-2.5">
+        <div className="flex-1 min-w-[180px]">
+          <label className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+            Funil Geral — Valor mínimo da causa
+          </label>
+          <input
+            value={minValueInput}
+            onChange={(e) => setMinValueInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") applyValueFilter(); }}
+            placeholder="Ex.: 150000 ou R$ 150.000,00"
+            inputMode="decimal"
+            className="w-full bg-background border border-border rounded-md px-2.5 py-1.5 text-xs focus:outline-none focus:border-primary"
+          />
+        </div>
+        <button
+          onClick={applyValueFilter}
+          className="text-xs font-semibold bg-primary text-primary-foreground rounded-md px-3 py-1.5 hover:opacity-90"
+        >
+          Aplicar filtro
+        </button>
+        <button
+          onClick={clearValueFilter}
+          className="text-xs font-semibold bg-muted border border-border rounded-md px-3 py-1.5 hover:bg-muted/70"
+        >
+          Limpar filtro
+        </button>
+        {minValue !== null && (
+          <div className="text-[11px] text-muted-foreground w-full sm:w-auto">
+            Mostrando Funil Geral ≥ <span className="font-semibold text-foreground">{formatCurrencyBR(minValue)}</span>
+          </div>
+        )}
+      </div>
+
       {/* Kanban com rolagem horizontal sempre visível */}
       <div className="kanban-scroll pb-3">
         <div className="flex gap-3 min-w-max">
@@ -166,6 +200,7 @@ export function LeadsTab({ leads, session, focusLead }: { leads: Lead[]; session
                 onDrop={onDrop}
                 allowDrop={allowDrop}
                 highlightId={highlightId}
+                emptyMessage={s === "funil" && minValue !== null ? "Nenhum cliente encontrado para esse valor de causa." : undefined}
               />
             </div>
           ))}
