@@ -1,6 +1,6 @@
 import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Lead, LeadStatus } from "@/lib/leads";
-import { STATUS_LABEL, STATUS_ORDER, digitsOnly } from "@/lib/leads";
+import { STATUS_LABEL, STATUS_ORDER, digitsOnly, parseCurrencyInput, formatCurrencyBR } from "@/lib/leads";
 import { LeadCard } from "./LeadCard";
 import type { Session } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
