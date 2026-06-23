@@ -143,17 +143,19 @@ export function NewLeadTab({ session }: { session: Session }) {
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.nome || !form.phone) {
-      setMsg("Nome e telefone principal são obrigatórios");
+    const procDigits = form.processo.replace(/\D/g, "");
+    const cpfDigits = form.cpf.replace(/\D/g, "");
+    const valorCausa = parseCurrencyInput(form.valor_causa);
+    if (!form.nome.trim()) { setMsg("Nome do cliente é obrigatório"); return; }
+    if (procDigits.length < 6) { setMsg("Número do processo é obrigatório"); return; }
+    if (cpfDigits.length !== 11) { setMsg("CPF é obrigatório (11 dígitos)"); return; }
+    if (valorCausa === null || Number.isNaN(valorCausa) || valorCausa <= 0) {
+      setMsg("Valor da causa é obrigatório (ex: 12345,67)");
       return;
     }
+    if (!form.phone.trim()) { setMsg("Telefone principal é obrigatório"); return; }
     if (dup) {
       setMsg(`Este cliente/processo já está cadastrado no CRM (vendedor: ${dup.vendedor}, motivo: ${dup.motivo}).`);
-      return;
-    }
-    const valorCausa = parseCurrencyInput(form.valor_causa);
-    if (Number.isNaN(valorCausa)) {
-      setMsg("Informe um valor da causa válido, ex: 12345,67");
       return;
     }
     // Revalida no servidor para evitar corrida (alguém pode ter cadastrado em paralelo)
