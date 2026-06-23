@@ -217,6 +217,7 @@ function Column({
   onDrop,
   allowDrop,
   highlightId,
+  emptyMessage,
 }: {
   col: LeadStatus;
   leads: Lead[];
@@ -224,6 +225,7 @@ function Column({
   onDrop: (e: React.DragEvent, c: LeadStatus) => void;
   allowDrop: (e: React.DragEvent) => void;
   highlightId?: string | null;
+  emptyMessage?: string;
 }) {
   const isFunil = col === "funil";
   const showVendedor = session.isManager || session.isLegal || isFunil;
@@ -240,7 +242,7 @@ function Column({
       <div className="space-y-2">
         {leads.length === 0 && (
           <div className="text-center text-xs text-muted-foreground/60 py-6 border border-dashed border-border rounded-lg">
-            Vazio
+            {emptyMessage ?? "Vazio"}
           </div>
         )}
         {leads.map((l) => {
