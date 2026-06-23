@@ -210,7 +210,7 @@ export function NewLeadTab({ session }: { session: Session }) {
     <form onSubmit={save} className="space-y-3 max-w-lg mx-auto">
       <h2 className="text-xl font-bold">Nova lead</h2>
 
-      <Field label="Número do processo *">
+      <Field label="Número do processo" required>
         <input
           required
           className={`input ${dup ? "!border-danger" : ""}`}
