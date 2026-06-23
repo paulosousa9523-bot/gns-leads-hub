@@ -251,7 +251,7 @@ export function NewLeadTab({ session }: { session: Session }) {
       <Field label="Nome do cliente *"><input required className="input" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="CNPJ"><input className="input" placeholder="00.000.000/0000-00" value={form.cnpj} onChange={(e) => setForm({ ...form, cnpj: e.target.value })} /></Field>
-        <Field label="CPF"><input className="input" placeholder="000.000.000-00" value={form.cpf} onChange={(e) => setForm({ ...form, cpf: e.target.value })} /></Field>
+        <Field label="CPF *"><input required className="input" placeholder="000.000.000-00" value={form.cpf} onChange={(e) => setForm({ ...form, cpf: e.target.value })} /></Field>
       </div>
       <Field label="Telefone 1 (com DDD) *"><input required className="input" placeholder="11 99999-9999" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field>
       <div className="grid grid-cols-2 gap-3">
