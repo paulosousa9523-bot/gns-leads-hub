@@ -1,6 +1,6 @@
 import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Lead, LeadStatus } from "@/lib/leads";
-import { STATUS_LABEL, STATUS_ORDER, digitsOnly } from "@/lib/leads";
+import { STATUS_LABEL, STATUS_ORDER, digitsOnly, parseCurrencyInput, formatCurrencyBR } from "@/lib/leads";
 import { LeadCard } from "./LeadCard";
 import type { Session } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,8 +34,19 @@ export function LeadsTab({ leads, session, focusLead }: { leads: Lead[]; session
     : STATUS_ORDER.filter((s) => s !== "cliente_digitado");
 
   const [query, setQuery] = useState("");
+  const [minValueInput, setMinValueInput] = useState("");
+  const [minValue, setMinValue] = useState<number | null>(null);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const lastFocusNonce = useRef<number>(0);
+
+  const applyValueFilter = () => {
+    const raw = minValueInput.trim();
+    if (!raw) { setMinValue(null); return; }
+    const parsed = parseCurrencyInput(raw);
+    if (parsed === null || !Number.isFinite(parsed)) { setMinValue(null); return; }
+    setMinValue(parsed);
+  };
+  const clearValueFilter = () => { setMinValueInput(""); setMinValue(null); };
 
   useEffect(() => {
     if (!focusLead || focusLead.nonce === lastFocusNonce.current) return;
@@ -91,18 +102,22 @@ export function LeadsTab({ leads, session, focusLead }: { leads: Lead[]; session
   const visibleByCol = useMemo(() => {
     const map = {} as Record<LeadStatus, Lead[]>;
     for (const s of COLUMNS) {
-      // Não-chamados sobem; chamados (cards azuis) vão para o final da fileira
-      map[s] = searched
-        .filter((l) => l.status === s)
-        .sort((a, b) => {
+      let items = searched.filter((l) => l.status === s);
+      if (s === "funil" && minValue !== null) {
+        items = items.filter((l) => typeof l.valor_causa === "number" && (l.valor_causa as number) >= minValue);
+        items.sort((a, b) => ((b.valor_causa ?? 0) as number) - ((a.valor_causa ?? 0) as number));
+      } else {
+        items.sort((a, b) => {
           const ca = a.chamado ? 1 : 0;
           const cb = b.chamado ? 1 : 0;
           if (ca !== cb) return ca - cb;
           return new Date(b.movido_em).getTime() - new Date(a.movido_em).getTime();
         });
+      }
+      map[s] = items;
     }
     return map;
-  }, [searched, COLUMNS]);
+  }, [searched, COLUMNS, minValue]);
 
   const onDrop = async (e: React.DragEvent, col: LeadStatus) => {
     e.preventDefault();
@@ -139,6 +154,40 @@ export function LeadsTab({ leads, session, focusLead }: { leads: Lead[]; session
         </div>
       </div>
 
+      {/* Filtro por valor da causa (Funil Geral) */}
+      <div className="flex flex-wrap items-end gap-2 bg-muted/30 border border-border rounded-lg p-2.5">
+        <div className="flex-1 min-w-[180px]">
+          <label className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+            Funil Geral — Valor mínimo da causa
+          </label>
+          <input
+            value={minValueInput}
+            onChange={(e) => setMinValueInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") applyValueFilter(); }}
+            placeholder="Ex.: 150000 ou R$ 150.000,00"
+            inputMode="decimal"
+            className="w-full bg-background border border-border rounded-md px-2.5 py-1.5 text-xs focus:outline-none focus:border-primary"
+          />
+        </div>
+        <button
+          onClick={applyValueFilter}
+          className="text-xs font-semibold bg-primary text-primary-foreground rounded-md px-3 py-1.5 hover:opacity-90"
+        >
+          Aplicar filtro
+        </button>
+        <button
+          onClick={clearValueFilter}
+          className="text-xs font-semibold bg-muted border border-border rounded-md px-3 py-1.5 hover:bg-muted/70"
+        >
+          Limpar filtro
+        </button>
+        {minValue !== null && (
+          <div className="text-[11px] text-muted-foreground w-full sm:w-auto">
+            Mostrando Funil Geral ≥ <span className="font-semibold text-foreground">{formatCurrencyBR(minValue)}</span>
+          </div>
+        )}
+      </div>
+
       {/* Kanban com rolagem horizontal sempre visível */}
       <div className="kanban-scroll pb-3">
         <div className="flex gap-3 min-w-max">
@@ -151,6 +200,7 @@ export function LeadsTab({ leads, session, focusLead }: { leads: Lead[]; session
                 onDrop={onDrop}
                 allowDrop={allowDrop}
                 highlightId={highlightId}
+                emptyMessage={s === "funil" && minValue !== null ? "Nenhum cliente encontrado para esse valor de causa." : undefined}
               />
             </div>
           ))}
@@ -167,6 +217,7 @@ function Column({
   onDrop,
   allowDrop,
   highlightId,
+  emptyMessage,
 }: {
   col: LeadStatus;
   leads: Lead[];
@@ -174,6 +225,7 @@ function Column({
   onDrop: (e: React.DragEvent, c: LeadStatus) => void;
   allowDrop: (e: React.DragEvent) => void;
   highlightId?: string | null;
+  emptyMessage?: string;
 }) {
   const isFunil = col === "funil";
   const showVendedor = session.isManager || session.isLegal || isFunil;
@@ -190,7 +242,7 @@ function Column({
       <div className="space-y-2">
         {leads.length === 0 && (
           <div className="text-center text-xs text-muted-foreground/60 py-6 border border-dashed border-border rounded-lg">
-            Vazio
+            {emptyMessage ?? "Vazio"}
           </div>
         )}
         {leads.map((l) => {
