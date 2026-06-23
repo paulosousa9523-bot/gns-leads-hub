@@ -267,8 +267,8 @@ export function NewLeadTab({ session }: { session: Session }) {
         </select>
       </Field>
       <Field label="Tribunal"><input className="input" placeholder="Ex: TJ-SP" value={form.tribunal} onChange={(e) => setForm({ ...form, tribunal: e.target.value })} /></Field>
-      <Field label="Valor da causa (R$)">
-        <input className="input" inputMode="decimal" placeholder="0,00" value={form.valor_causa} onChange={(e) => setForm({ ...form, valor_causa: e.target.value })} />
+      <Field label="Valor da causa (R$) *">
+        <input required className="input" inputMode="decimal" placeholder="0,00" value={form.valor_causa} onChange={(e) => setForm({ ...form, valor_causa: e.target.value })} />
       </Field>
       <Field label="Coluna inicial">
         <select className="input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as LeadStatus })}>
