@@ -5,6 +5,7 @@ import { ACTION_LABEL, type ActionType } from "@/lib/actionLog";
 import { VENDEDORES, type Session } from "@/lib/auth";
 import { adminResetPassword } from "@/lib/admin.functions";
 import type { Lead } from "@/lib/leads";
+import { AdminContractTemplate } from "./AdminContractTemplate";
 import { Key, Save } from "lucide-react";
 
 interface ActionRow {
