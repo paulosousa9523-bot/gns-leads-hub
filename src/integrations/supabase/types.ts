@@ -73,6 +73,90 @@ export type Database = {
           },
         ]
       }
+      contract_templates: {
+        Row: {
+          ativo: boolean
+          criado: string
+          enviado_por: string | null
+          id: string
+          mime_type: string | null
+          nome: string
+          storage_path: string
+          tamanho: number | null
+        }
+        Insert: {
+          ativo?: boolean
+          criado?: string
+          enviado_por?: string | null
+          id?: string
+          mime_type?: string | null
+          nome: string
+          storage_path: string
+          tamanho?: number | null
+        }
+        Update: {
+          ativo?: boolean
+          criado?: string
+          enviado_por?: string | null
+          id?: string
+          mime_type?: string | null
+          nome?: string
+          storage_path?: string
+          tamanho?: number | null
+        }
+        Relationships: []
+      }
+      generated_contracts: {
+        Row: {
+          criado: string
+          gerado_por: string
+          id: string
+          lead_id: string
+          mime_type: string | null
+          nome_arquivo: string
+          storage_path: string
+          tamanho: number | null
+          template_id: string | null
+        }
+        Insert: {
+          criado?: string
+          gerado_por: string
+          id?: string
+          lead_id: string
+          mime_type?: string | null
+          nome_arquivo: string
+          storage_path: string
+          tamanho?: number | null
+          template_id?: string | null
+        }
+        Update: {
+          criado?: string
+          gerado_por?: string
+          id?: string
+          lead_id?: string
+          mime_type?: string | null
+          nome_arquivo?: string
+          storage_path?: string
+          tamanho?: number | null
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_contracts_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generated_contracts_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "contract_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_actions: {
         Row: {
           acao: string
@@ -151,15 +235,21 @@ export type Database = {
       }
       leads: {
         Row: {
+          bairro_cliente: string | null
+          cep_cliente: string | null
           chamado: boolean
           cnpj: string | null
           contrato_status: string | null
           cpf: string | null
           criado: string
+          endereco_cliente: string | null
+          estado_civil: string | null
           followup: string | null
           id: string
           movido_em: string
+          nacionalidade: string | null
           nome: string
+          numero_endereco: string | null
           obs: string | null
           phone: string
           phone2: string | null
@@ -167,9 +257,11 @@ export type Database = {
           phone4: string | null
           phone5: string | null
           processo: string | null
+          profissao: string | null
           responsavel_juridico: string | null
           responsavel_juridico_em: string | null
           responsavel_juridico_por: string | null
+          rg_cliente: string | null
           status: string
           tipo_processo: string | null
           tribunal: string | null
@@ -178,15 +270,21 @@ export type Database = {
           vendedor: string
         }
         Insert: {
+          bairro_cliente?: string | null
+          cep_cliente?: string | null
           chamado?: boolean
           cnpj?: string | null
           contrato_status?: string | null
           cpf?: string | null
           criado?: string
+          endereco_cliente?: string | null
+          estado_civil?: string | null
           followup?: string | null
           id?: string
           movido_em?: string
+          nacionalidade?: string | null
           nome: string
+          numero_endereco?: string | null
           obs?: string | null
           phone: string
           phone2?: string | null
@@ -194,9 +292,11 @@ export type Database = {
           phone4?: string | null
           phone5?: string | null
           processo?: string | null
+          profissao?: string | null
           responsavel_juridico?: string | null
           responsavel_juridico_em?: string | null
           responsavel_juridico_por?: string | null
+          rg_cliente?: string | null
           status?: string
           tipo_processo?: string | null
           tribunal?: string | null
@@ -205,15 +305,21 @@ export type Database = {
           vendedor: string
         }
         Update: {
+          bairro_cliente?: string | null
+          cep_cliente?: string | null
           chamado?: boolean
           cnpj?: string | null
           contrato_status?: string | null
           cpf?: string | null
           criado?: string
+          endereco_cliente?: string | null
+          estado_civil?: string | null
           followup?: string | null
           id?: string
           movido_em?: string
+          nacionalidade?: string | null
           nome?: string
+          numero_endereco?: string | null
           obs?: string | null
           phone?: string
           phone2?: string | null
@@ -221,9 +327,11 @@ export type Database = {
           phone4?: string | null
           phone5?: string | null
           processo?: string | null
+          profissao?: string | null
           responsavel_juridico?: string | null
           responsavel_juridico_em?: string | null
           responsavel_juridico_por?: string | null
+          rg_cliente?: string | null
           status?: string
           tipo_processo?: string | null
           tribunal?: string | null

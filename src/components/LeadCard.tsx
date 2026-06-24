@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@/lib/auth";
 import { MessageCircle, Pencil, X, Download, Phone, PhoneOff, Trash2, CalendarClock } from "lucide-react";
 import { DocsManager } from "./DocsManager";
+import { ContractsSection } from "./ContractsSection";
 import { PROCESS_DOC_CATEGORIES, OBS_DOC_CATEGORIES } from "@/lib/leads";
 import { logAction } from "@/lib/actionLog";
 import { useServerFn } from "@tanstack/react-start";
@@ -301,7 +302,16 @@ function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; o
     obs: lead.obs || "",
     contrato_status: (lead.contrato_status ?? "") as ContratoStatus | "",
     responsavel_juridico: lead.responsavel_juridico ?? "",
+    nacionalidade: lead.nacionalidade ?? "",
+    estado_civil: lead.estado_civil ?? "",
+    profissao: lead.profissao ?? "",
+    endereco_cliente: lead.endereco_cliente ?? "",
+    numero_endereco: lead.numero_endereco ?? "",
+    bairro_cliente: lead.bairro_cliente ?? "",
+    cep_cliente: lead.cep_cliente ?? "",
+    rg_cliente: lead.rg_cliente ?? "",
   });
+  const [showPessoais, setShowPessoais] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Vendedor só vê listagem dos próprios docs; admin/jurídico vê e baixa todos
@@ -343,6 +353,14 @@ function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; o
       valor_causa: valorCausa,
       status: form.status,
       obs: form.obs || null,
+      nacionalidade: form.nacionalidade || null,
+      estado_civil: form.estado_civil || null,
+      profissao: form.profissao || null,
+      endereco_cliente: form.endereco_cliente || null,
+      numero_endereco: form.numero_endereco || null,
+      bairro_cliente: form.bairro_cliente || null,
+      cep_cliente: form.cep_cliente || null,
+      rg_cliente: form.rg_cliente || null,
       ...(statusChanged ? { movido_em: nowIso } : {}),
       ...(canEditJuridico ? {
         contrato_status: form.contrato_status || null,
@@ -445,6 +463,37 @@ function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; o
               )}
             </div>
           )}
+
+          {/* Dados pessoais para preenchimento de contrato */}
+          <div className="bg-muted/20 border border-border rounded-lg p-2.5 space-y-2">
+            <button
+              type="button"
+              onClick={() => setShowPessoais((v) => !v)}
+              className="w-full flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-primary"
+            >
+              <span>Dados pessoais (contrato)</span>
+              <span className="text-muted-foreground">{showPessoais ? "ocultar" : "mostrar"}</span>
+            </button>
+            {showPessoais && (
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="Nacionalidade"><input className="input" value={form.nacionalidade} onChange={(e) => setForm({ ...form, nacionalidade: e.target.value })} /></Field>
+                  <Field label="Estado civil"><input className="input" value={form.estado_civil} onChange={(e) => setForm({ ...form, estado_civil: e.target.value })} /></Field>
+                </div>
+                <Field label="Profissão"><input className="input" value={form.profissao} onChange={(e) => setForm({ ...form, profissao: e.target.value })} /></Field>
+                <Field label="RG"><input className="input" value={form.rg_cliente} onChange={(e) => setForm({ ...form, rg_cliente: e.target.value })} /></Field>
+                <Field label="Endereço"><input className="input" value={form.endereco_cliente} onChange={(e) => setForm({ ...form, endereco_cliente: e.target.value })} /></Field>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="Número"><input className="input" value={form.numero_endereco} onChange={(e) => setForm({ ...form, numero_endereco: e.target.value })} /></Field>
+                  <Field label="Bairro"><input className="input" value={form.bairro_cliente} onChange={(e) => setForm({ ...form, bairro_cliente: e.target.value })} /></Field>
+                </div>
+                <Field label="CEP"><input className="input" value={form.cep_cliente} onChange={(e) => setForm({ ...form, cep_cliente: e.target.value })} /></Field>
+              </div>
+            )}
+          </div>
+
+          <ContractsSection leadId={lead.id} leadNome={form.nome} session={session} />
+
           <Field label="Observações">
             <textarea className="input min-h-[80px]" value={form.obs} onChange={(e) => setForm({ ...form, obs: e.target.value })} />
           </Field>

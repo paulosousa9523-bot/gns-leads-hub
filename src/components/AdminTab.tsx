@@ -5,6 +5,7 @@ import { ACTION_LABEL, type ActionType } from "@/lib/actionLog";
 import { VENDEDORES, type Session } from "@/lib/auth";
 import { adminResetPassword } from "@/lib/admin.functions";
 import type { Lead } from "@/lib/leads";
+import { AdminContractTemplate } from "./AdminContractTemplate";
 import { Key, Save } from "lucide-react";
 
 interface ActionRow {
@@ -210,6 +211,8 @@ export function AdminTab({ leads, session }: { leads: Lead[]; session: Session }
           </div>
         </section>
       )}
+      {!session.restrictedVendors && <AdminContractTemplate session={session} />}
+
 
       <section className="bg-surface border border-border rounded-xl">
         <div className="px-3 py-2 border-b border-border flex flex-wrap items-center gap-2">
