@@ -302,7 +302,16 @@ function EditModal({ lead, session, onClose }: { lead: Lead; session: Session; o
     obs: lead.obs || "",
     contrato_status: (lead.contrato_status ?? "") as ContratoStatus | "",
     responsavel_juridico: lead.responsavel_juridico ?? "",
+    nacionalidade: lead.nacionalidade ?? "",
+    estado_civil: lead.estado_civil ?? "",
+    profissao: lead.profissao ?? "",
+    endereco_cliente: lead.endereco_cliente ?? "",
+    numero_endereco: lead.numero_endereco ?? "",
+    bairro_cliente: lead.bairro_cliente ?? "",
+    cep_cliente: lead.cep_cliente ?? "",
+    rg_cliente: lead.rg_cliente ?? "",
   });
+  const [showPessoais, setShowPessoais] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Vendedor só vê listagem dos próprios docs; admin/jurídico vê e baixa todos
