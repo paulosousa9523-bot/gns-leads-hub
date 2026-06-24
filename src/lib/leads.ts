@@ -83,6 +83,14 @@ export interface Lead {
   responsavel_juridico?: string | null;
   responsavel_juridico_em?: string | null;
   responsavel_juridico_por?: string | null;
+  nacionalidade?: string | null;
+  estado_civil?: string | null;
+  profissao?: string | null;
+  endereco_cliente?: string | null;
+  numero_endereco?: string | null;
+  bairro_cliente?: string | null;
+  cep_cliente?: string | null;
+  rg_cliente?: string | null;
 }
 
 export type ContratoStatus = "andamento" | "finalizado" | "pendencia" | "aguardando_acao";
