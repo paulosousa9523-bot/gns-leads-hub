@@ -211,6 +211,8 @@ export function AdminTab({ leads, session }: { leads: Lead[]; session: Session }
           </div>
         </section>
       )}
+      {!session.restrictedVendors && <AdminContractTemplate session={session} />}
+
 
       <section className="bg-surface border border-border rounded-xl">
         <div className="px-3 py-2 border-b border-border flex flex-wrap items-center gap-2">
