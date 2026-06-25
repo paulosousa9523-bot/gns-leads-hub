@@ -23,62 +23,22 @@ export type DuplicateMatch = {
   motivo: string;
 };
 
-const LEAD_COLUMNS = "id, vendedor, nome, phone, phone2, phone3, phone4, phone5, cnpj, cpf, veiculo, tipo_processo, tribunal, processo, valor_causa, status, obs, followup, movido_em, criado, chamado, contrato_status, responsavel_juridico, responsavel_juridico_em, responsavel_juridico_por";
+const LEAD_COLUMNS = "id, vendedor, nome, phone, phone2, phone3, phone4, phone5, cnpj, cpf, veiculo, tipo_processo, tribunal, processo, valor_causa, status, obs, followup, movido_em, criado, chamado, contrato_status, responsavel_juridico, responsavel_juridico_em, responsavel_juridico_por, nacionalidade, estado_civil, profissao, endereco_cliente, numero_endereco, bairro_cliente, cep_cliente, rg_cliente";
 
 export const checkLeadDuplicate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => CheckInput.parse(input))
-  .handler(async ({ data }): Promise<{ duplicate: DuplicateMatch | null }> => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const onlyDigits = (s: string | null | undefined) => (s || "").replace(/\D/g, "");
-
-    const procDigits = onlyDigits(data.processo);
-    const cpfDigits = onlyDigits(data.cpf);
-    const cnpjDigits = onlyDigits(data.cnpj);
-    const phoneDigitsList = (data.phones ?? [])
-      .map(onlyDigits)
-      .filter((p) => p.length >= 8);
-
-    type Row = { id: string; nome: string; vendedor: string; status: string; processo: string | null; cpf: string | null; cnpj: string | null; phone: string; phone2: string | null; phone3: string | null; phone4: string | null; phone5: string | null };
-
-    // 1) Processo (mais forte)
-    if (procDigits.length >= 6) {
-      const { data: rows } = await supabaseAdmin
-        .from("leads")
-        .select("id, nome, vendedor, status, processo")
-        .limit(2000);
-      const hit = (rows as Row[] | null)?.find((r) => onlyDigits(r.processo) === procDigits);
-      if (hit) return { duplicate: { id: hit.id, nome: hit.nome, vendedor: hit.vendedor, status: hit.status, motivo: "Número do processo" } };
-    }
-
-    // 2) CPF/CNPJ
-    if (cpfDigits.length >= 11 || cnpjDigits.length >= 14) {
-      const { data: rows } = await supabaseAdmin
-        .from("leads")
-        .select("id, nome, vendedor, status, cpf, cnpj")
-        .limit(5000);
-      const hit = (rows as Row[] | null)?.find((r) =>
-        (cpfDigits.length >= 11 && onlyDigits(r.cpf) === cpfDigits) ||
-        (cnpjDigits.length >= 14 && onlyDigits(r.cnpj) === cnpjDigits)
-      );
-      if (hit) return { duplicate: { id: hit.id, nome: hit.nome, vendedor: hit.vendedor, status: hit.status, motivo: cpfDigits ? "CPF" : "CNPJ" } };
-    }
-
-    // 3) Telefones (qualquer um igual a qualquer um dos 5 do banco)
-    if (phoneDigitsList.length) {
-      const { data: rows } = await supabaseAdmin
-        .from("leads")
-        .select("id, nome, vendedor, status, phone, phone2, phone3, phone4, phone5")
-        .limit(5000);
-      const hit = (rows as Row[] | null)?.find((r) => {
-        const existing = [r.phone, r.phone2, r.phone3, r.phone4, r.phone5]
-          .map(onlyDigits)
-          .filter((p) => p.length >= 8);
-        return existing.some((e) => phoneDigitsList.some((p) => e === p || e.endsWith(p) || p.endsWith(e)));
-      });
-      if (hit) return { duplicate: { id: hit.id, nome: hit.nome, vendedor: hit.vendedor, status: hit.status, motivo: "Telefone" } };
-    }
-
-    return { duplicate: null };
+  .handler(async ({ data, context }): Promise<{ duplicate: DuplicateMatch | null }> => {
+    // Usa RPC indexado em vez de varrer milhares de linhas a cada digitação.
+    const { data: rows, error } = await context.supabase.rpc("find_lead_duplicate", {
+      _processo: data.processo ?? "",
+      _cpf: data.cpf ?? "",
+      _cnpj: data.cnpj ?? "",
+      _phones: data.phones ?? [],
+    });
+    if (error) throw new Error(error.message);
+    const hit = (rows as Array<{ id: string; nome: string; vendedor: string; status: string; motivo: string }> | null)?.[0];
+    return { duplicate: hit ?? null };
   });
 
 export const fetchVisibleLeads = createServerFn({ method: "GET" })
