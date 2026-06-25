@@ -83,6 +83,7 @@ export type Database = {
           nome: string
           storage_path: string
           tamanho: number | null
+          tipo: string
         }
         Insert: {
           ativo?: boolean
@@ -93,6 +94,7 @@ export type Database = {
           nome: string
           storage_path: string
           tamanho?: number | null
+          tipo: string
         }
         Update: {
           ativo?: boolean
@@ -103,6 +105,7 @@ export type Database = {
           nome?: string
           storage_path?: string
           tamanho?: number | null
+          tipo?: string
         }
         Relationships: []
       }
@@ -117,6 +120,7 @@ export type Database = {
           storage_path: string
           tamanho: number | null
           template_id: string | null
+          tipo: string
         }
         Insert: {
           criado?: string
@@ -128,6 +132,7 @@ export type Database = {
           storage_path: string
           tamanho?: number | null
           template_id?: string | null
+          tipo: string
         }
         Update: {
           criado?: string
@@ -139,6 +144,7 @@ export type Database = {
           storage_path?: string
           tamanho?: number | null
           template_id?: string | null
+          tipo?: string
         }
         Relationships: [
           {
