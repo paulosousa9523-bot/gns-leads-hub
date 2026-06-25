@@ -175,11 +175,13 @@ function App() {
 
       <main className="px-4 py-5">
         {tab === "leads" && <LeadsTab key="leads" leads={leads} session={session} focusLead={focusLead} />}
-        {tab === "new" && <NewLeadTab session={session} />}
-        {tab === "roteiro" && <RoteiroTab />}
-        {tab === "painel" && <PainelTab leads={leads} session={session} />}
-        {tab === "admin" && session.isManager && <AdminTab leads={leads} session={session} />}
-        {tab === "gestor" && session.name === GESTOR_NAME && <GestorDashboardTab />}
+        <Suspense fallback={<TabFallback />}>
+          {tab === "new" && <NewLeadTab session={session} />}
+          {tab === "roteiro" && <RoteiroTab />}
+          {tab === "painel" && <PainelTab leads={leads} session={session} />}
+          {tab === "admin" && session.isManager && <AdminTab leads={leads} session={session} />}
+          {tab === "gestor" && session.name === GESTOR_NAME && <GestorDashboardTab />}
+        </Suspense>
       </main>
 
       <nav className="fixed bottom-0 inset-x-0 z-30 bg-surface/95 backdrop-blur border-t border-border">
