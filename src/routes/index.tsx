@@ -1,19 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { clearLocalSupabaseTokens, GESTOR_NAME, loadSession, signOut, type Session } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import type { Lead } from "@/lib/leads";
 import { fetchVisibleLeads } from "@/lib/leads.functions";
 import { LoginScreen } from "@/components/LoginScreen";
 import { LeadsTab } from "@/components/LeadsTab";
-import { NewLeadTab } from "@/components/NewLeadTab";
-import { RoteiroTab } from "@/components/RoteiroTab";
-import { PainelTab } from "@/components/PainelTab";
-import { AdminTab } from "@/components/AdminTab";
-import { GestorDashboardTab } from "@/components/GestorDashboardTab";
 import { LogOut, Users, Plus, MessageSquare, BarChart3, Shield, Trophy } from "lucide-react";
 import { useAutoProgression } from "@/lib/autoProgression";
+
+// Tabs secundárias carregadas sob demanda para reduzir o JS inicial.
+const NewLeadTab = lazy(() => import("@/components/NewLeadTab").then((m) => ({ default: m.NewLeadTab })));
+const RoteiroTab = lazy(() => import("@/components/RoteiroTab").then((m) => ({ default: m.RoteiroTab })));
+const PainelTab = lazy(() => import("@/components/PainelTab").then((m) => ({ default: m.PainelTab })));
+const AdminTab = lazy(() => import("@/components/AdminTab").then((m) => ({ default: m.AdminTab })));
+const GestorDashboardTab = lazy(() => import("@/components/GestorDashboardTab").then((m) => ({ default: m.GestorDashboardTab })));
+
+const TabFallback = () => (
+  <div className="py-10 text-center text-xs text-muted-foreground">Carregando…</div>
+);
 
 
 export const Route = createFileRoute("/")({
