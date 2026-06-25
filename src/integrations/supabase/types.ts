@@ -393,6 +393,21 @@ export type Database = {
     Functions: {
       current_display_name: { Args: never; Returns: string }
       current_restricted_vendors: { Args: never; Returns: string[] }
+      find_lead_duplicate: {
+        Args: {
+          _cnpj: string
+          _cpf: string
+          _phones: string[]
+          _processo: string
+        }
+        Returns: {
+          id: string
+          motivo: string
+          nome: string
+          status: string
+          vendedor: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
