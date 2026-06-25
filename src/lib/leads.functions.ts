@@ -31,9 +31,9 @@ export const checkLeadDuplicate = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ duplicate: DuplicateMatch | null }> => {
     // Usa RPC indexado em vez de varrer milhares de linhas a cada digitação.
     const { data: rows, error } = await context.supabase.rpc("find_lead_duplicate", {
-      _processo: data.processo ?? null,
-      _cpf: data.cpf ?? null,
-      _cnpj: data.cnpj ?? null,
+      _processo: data.processo ?? "",
+      _cpf: data.cpf ?? "",
+      _cnpj: data.cnpj ?? "",
       _phones: data.phones ?? [],
     });
     if (error) throw new Error(error.message);
